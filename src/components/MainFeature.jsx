@@ -945,6 +945,7 @@ const MainFeature = () => {
                           )}
                         
                         {/* Attachments and Comments indicators */}
+                        <div className="flex items-center space-x-3 mt-2">
                         <div className="flex items-center space-x-3">
                           {task.attachments && task.attachments.length > 0 && (
                             <div className="flex items-center space-x-1">
@@ -962,6 +963,7 @@ const MainFeature = () => {
                               </span>
                             </div>
                           )}
+                        </div>
                         </div>
                       </div>
                     </div>
@@ -1033,8 +1035,8 @@ const MainFeature = () => {
                         project: '',
                         description: '',
                         estimatedHours: 1,
+                        attachments: [],
                         comments: []
-                        estimatedHours: 1
                       })
                     }}
                     className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
