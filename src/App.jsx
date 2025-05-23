@@ -1,10 +1,14 @@
 import { Routes, Route } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './calendar-custom.css'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
+
+// Lazy load Projects component
+const Projects = lazy(() => import('./pages/Projects'))
 
 function App() {
   return (
@@ -14,6 +18,14 @@ function App() {
         <Route path="*" element={<NotFound />} />
         <Route path="/calendar" element={<Home />} />
         <Route path="/timeline" element={<Home />} />
+        <Route 
+          path="/projects" 
+          element={
+            <Suspense fallback={<div className="min-h-screen bg-surface-50 dark:bg-surface-900 flex items-center justify-center"><div className="text-surface-600 dark:text-surface-400">Loading...</div></div>}>
+              <Projects />
+            </Suspense>
+          } 
+        />
       </Routes>
       
       <ToastContainer

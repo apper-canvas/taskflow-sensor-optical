@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import MainFeature from '../components/MainFeature'
 import ApperIcon from '../components/ApperIcon'
@@ -37,9 +38,9 @@ const Home = () => {
               <a href="#tasks" className="text-surface-700 dark:text-surface-300 hover:text-primary transition-colors font-medium">
                 Tasks
               </a>
-              <a href="#projects" className="text-surface-700 dark:text-surface-300 hover:text-primary transition-colors font-medium">
+              <Link to="/projects" className="text-surface-700 dark:text-surface-300 hover:text-primary transition-colors font-medium">
                 Projects
-              </a>
+              </Link>
               <a href="#analytics" className="text-surface-700 dark:text-surface-300 hover:text-primary transition-colors font-medium">
                 Analytics
               </a>
