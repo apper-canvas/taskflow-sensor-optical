@@ -132,18 +132,12 @@ const MainFeature = () => {
       project: '',
       estimatedHours: 1,
       attachments: [],
-      comments: [],
-      position: tasks.length
+      comments: []
     })
     setIsFormOpen(false)
-    toast.success('Task created successfully!')
-  }
-      comments: []
-    setTasks(prev => prev.map(task => 
     setSelectedTask(null)
-      task.id === taskId 
-        : task
-    ))
+  }
+
   const handleUpdateTaskStatus = async (taskId, newStatus) => {
     try {
       setLoading(true)
@@ -165,12 +159,13 @@ const MainFeature = () => {
       toast.error('Failed to update task status')
     } finally {
       setLoading(false)
-        ? { ...task, ...updates, updatedAt: new Date().toISOString() }
-        : task
-    ))
-    toast.success('Task updated successfully!')
-    // This method is now handled by handleCreateTask when selectedTask is set
-    console.log('handleUpdateTask called with:', taskId, updates)
+    }
+  }
+
+  const handleEditTask = (task) => {
+    setSelectedTask(task)
+    setNewTask({
+      title: task.title,
       description: task.description,
       dueDate: task.dueDate,
       priority: task.priority,
@@ -181,7 +176,6 @@ const MainFeature = () => {
       comments: task.comments || []
     })
     setIsFormOpen(true)
-      project: task.project,
   }
 
   const handleDeleteTask = async (taskId) => {
@@ -611,7 +605,6 @@ const MainFeature = () => {
                   <span className="text-xs text-surface-500">
                     {getTimeAgo(comment.createdAt)}
                   </span>
-                  <button
                     onClick={() => handleDeleteComment(task.id, comment.id)}
                     onClick={() => handleDeleteComment(task.Id, comment.id)}
                   >
@@ -1168,7 +1161,8 @@ const MainFeature = () => {
                         title: '',
                         description: '',
                         dueDate: '',
-                        comments: []
+                        priority: 'medium',
+                        category: '',
                         project: '',
                         estimatedHours: 1,
                         attachments: [],
@@ -1310,7 +1304,6 @@ const MainFeature = () => {
                         setNewTask({
                           title: '', description: '', dueDate: '', priority: 'medium', 
                           category: '', project: '', estimatedHours: 1,
-                          attachments: [],
                           comments: []
                           position: tasks.length
                         })
