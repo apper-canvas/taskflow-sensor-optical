@@ -1,0 +1,104 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply text-surface-900 dark:text-surface-100;
+  }
+  
+  * {
+    @apply border-surface-200 dark:border-surface-700;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .task-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .priority-high {
+    @apply border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20;
+  }
+  
+  .priority-medium {
+    @apply border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20;
+  }
+  
+  .priority-low {
+    @apply border-l-4 border-green-500 bg-green-50 dark:bg-green-900/20;
+  }
+}
+
+@layer components {
+  .neu-button {
+    @apply bg-surface-100 dark:bg-surface-800 rounded-xl shadow-neu-light dark:shadow-neu-dark 
+           hover:shadow-card dark:hover:shadow-surface-700/50 transition-all duration-200 
+           active:scale-95;
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface-100 dark:bg-surface-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-surface-300 dark:bg-surface-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-surface-400 dark:bg-surface-500;
+}
+
+/* React Toastify custom styles */
+.Toastify__toast {
+  @apply rounded-xl font-medium;
+}
+
+.Toastify__progress-bar {
+  @apply h-1;
+}
+
+/* Responsive text utilities */
+@media (max-width: 640px) {
+  .text-responsive {
+    @apply text-sm;
+  }
+}
+
+@media (min-width: 641px) {
+  .text-responsive {
+    @apply text-base;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive {
+    @apply text-lg;
+  }
+}

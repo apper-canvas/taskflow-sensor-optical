@@ -1,0 +1,473 @@
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'react-toastify'
+import { format, isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns'
+import ApperIcon from './ApperIcon'
+
+const MainFeature = () => {
+  const [tasks, setTasks] = useState([
+    {
+      id: '1',
+      title: 'Design TaskFlow Landing Page',
+      description: 'Create a modern, responsive landing page with dark mode support',
+      dueDate: new Date().toISOString().split('T')[0],
+      priority: 'high',
+      status: 'pending',
+      category: 'Design'
+    },
+    {
+      id: '2',
+      title: 'Implement Task Filtering',
+      description: 'Add filtering capabilities by priority, status, and due date',
+      dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+      priority: 'medium',
+      status: 'in-progress',
+      category: 'Development'
+    }
+  ])
+
+  const [filter, setFilter] = useState('all')
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    priority: 'medium',
+    category: ''
+  })
+
+  const priorities = ['low', 'medium', 'high']
+  const statuses = ['pending', 'in-progress', 'completed']
+  const categories = ['Design', 'Development', 'Marketing', 'Research', 'Planning']
+
+  const handleCreateTask = (e) => {
+    e.preventDefault()
+    
+    if (!newTask.title.trim()) {
+      toast.error('Task title is required!')
+      return
+    }
+
+    const task = {
+      id: Date.now().toString(),
+      ...newTask,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    setTasks(prev => [task, ...prev])
+    setNewTask({
+      title: '',
+      description: '',
+      dueDate: '',
+      priority: 'medium',
+      category: ''
+    })
+    setIsFormOpen(false)
+    toast.success('Task created successfully!')
+  }
+
+  const handleUpdateTaskStatus = (taskId, newStatus) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
+        : task
+    ))
+    
+    if (newStatus === 'completed') {
+      toast.success('Task completed! 🎉')
+    } else {
+      toast.info(`Task marked as ${newStatus.replace('-', ' ')}`)
+    }
+  }
+
+  const handleDeleteTask = (taskId) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId))
+    toast.success('Task deleted successfully')
+  }
+
+  const getFilteredTasks = () => {
+    let filtered = tasks
+
+    // Apply status filter
+    if (filter !== 'all') {
+      filtered = filtered.filter(task => {
+        switch (filter) {
+          case 'pending':
+            return task.status === 'pending'
+          case 'in-progress':
+            return task.status === 'in-progress'
+          case 'completed':
+            return task.status === 'completed'
+          case 'today':
+            return isToday(parseISO(task.dueDate))
+          case 'upcoming':
+            return new Date(task.dueDate) > new Date()
+          default:
+            return true
+        }
+      })
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(task =>
+        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.category.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    return filtered
+  }
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high': return 'text-red-600 dark:text-red-400'
+      case 'medium': return 'text-yellow-600 dark:text-yellow-400'
+      case 'low': return 'text-green-600 dark:text-green-400'
+      default: return 'text-surface-600 dark:text-surface-400'
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed': return 'CheckCircle2'
+      case 'in-progress': return 'Clock'
+      case 'pending': return 'Circle'
+      default: return 'Circle'
+    }
+  }
+
+  const getDateLabel = (dateString) => {
+    const date = parseISO(dateString)
+    if (isToday(date)) return 'Today'
+    if (isTomorrow(date)) return 'Tomorrow'
+    if (isThisWeek(date)) return format(date, 'EEEE')
+    return format(date, 'MMM d, yyyy')
+  }
+
+  const filteredTasks = getFilteredTasks()
+
+  return (
+    <div className="p-6 md:p-8 lg:p-12">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 md:mb-10">
+        <div className="mb-6 lg:mb-0">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-surface-900 dark:text-white mb-2">
+            Task Dashboard
+          </h2>
+          <p className="text-surface-600 dark:text-surface-400 text-base md:text-lg">
+            Manage your tasks efficiently and boost your productivity
+          </p>
+        </div>
+
+        <motion.button
+          onClick={() => setIsFormOpen(true)}
+          className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl shadow-soft hover:shadow-card transition-all duration-200 w-full lg:w-auto"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <ApperIcon name="Plus" className="w-5 h-5 mr-2" />
+          Create Task
+        </motion.button>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="mb-8 space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <ApperIcon name="Search" className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400" />
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+          />
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: 'all', label: 'All Tasks', icon: 'List' },
+            { id: 'pending', label: 'Pending', icon: 'Circle' },
+            { id: 'in-progress', label: 'In Progress', icon: 'Clock' },
+            { id: 'completed', label: 'Completed', icon: 'CheckCircle2' },
+            { id: 'today', label: 'Due Today', icon: 'Calendar' },
+            { id: 'upcoming', label: 'Upcoming', icon: 'CalendarDays' }
+          ].map((filterOption) => (
+            <motion.button
+              key={filterOption.id}
+              onClick={() => setFilter(filterOption.id)}
+              className={`flex items-center px-3 md:px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm md:text-base ${
+                filter === filterOption.id
+                  ? 'bg-primary text-white shadow-soft'
+                  : 'bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-700'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <ApperIcon name={filterOption.icon} className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">{filterOption.label}</span>
+              <span className="sm:hidden">{filterOption.label.split(' ')[0]}</span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* Task List */}
+      <div className="space-y-4">
+        <AnimatePresence mode="popLayout">
+          {filteredTasks.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center py-12 md:py-16"
+            >
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-surface-100 dark:bg-surface-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <ApperIcon name="ClipboardList" className="w-8 h-8 md:w-10 md:h-10 text-surface-400" />
+              </div>
+              <h3 className="text-lg md:text-xl font-semibold text-surface-900 dark:text-white mb-2">
+                No tasks found
+              </h3>
+              <p className="text-surface-600 dark:text-surface-400">
+                {searchTerm ? "Try adjusting your search terms" : "Create your first task to get started"}
+              </p>
+            </motion.div>
+          ) : (
+            filteredTasks.map((task, index) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -300 }}
+                transition={{ delay: index * 0.1 }}
+                className={`bg-white dark:bg-surface-800 rounded-2xl p-4 md:p-6 shadow-soft border border-surface-200 dark:border-surface-700 hover:shadow-card transition-all duration-200 ${
+                  task.priority === 'high' ? 'priority-high' : 
+                  task.priority === 'medium' ? 'priority-medium' : 'priority-low'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start space-x-3">
+                      <button
+                        onClick={() => {
+                          const nextStatus = task.status === 'pending' ? 'in-progress' :
+                                           task.status === 'in-progress' ? 'completed' : 'pending'
+                          handleUpdateTaskStatus(task.id, nextStatus)
+                        }}
+                        className="mt-1 flex-shrink-0"
+                      >
+                        <ApperIcon 
+                          name={getStatusIcon(task.status)}
+                          className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${
+                            task.status === 'completed' ? 'text-green-500' :
+                            task.status === 'in-progress' ? 'text-yellow-500' : 'text-surface-400'
+                          }`}
+                        />
+                      </button>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`text-lg md:text-xl font-semibold mb-2 ${
+                          task.status === 'completed' ? 'line-through text-surface-500' : 'text-surface-900 dark:text-white'
+                        }`}>
+                          {task.title}
+                        </h3>
+                        
+                        {task.description && (
+                          <p className="text-surface-600 dark:text-surface-400 mb-3 text-sm md:text-base leading-relaxed">
+                            {task.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex flex-wrap items-center gap-3 text-sm">
+                          <div className="flex items-center space-x-1">
+                            <ApperIcon name="Calendar" className="w-4 h-4 text-surface-400" />
+                            <span className="text-surface-600 dark:text-surface-400">
+                              {getDateLabel(task.dueDate)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <ApperIcon name="Flag" className={`w-4 h-4 ${getPriorityColor(task.priority)}`} />
+                            <span className={`capitalize ${getPriorityColor(task.priority)} font-medium`}>
+                              {task.priority}
+                            </span>
+                          </div>
+                          
+                          {task.category && (
+                            <div className="flex items-center space-x-1">
+                              <ApperIcon name="Tag" className="w-4 h-4 text-surface-400" />
+                              <span className="text-surface-600 dark:text-surface-400">
+                                {task.category}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 sm:ml-4">
+                    <select
+                      value={task.status}
+                      onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
+                      className="px-3 py-1 bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                      {statuses.map(status => (
+                        <option key={status} value={status}>
+                          {status.replace('-', ' ')}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    >
+                      <ApperIcon name="Trash2" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Create Task Modal */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white dark:bg-surface-800 rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl md:text-2xl font-bold text-surface-900 dark:text-white">
+                    Create New Task
+                  </h3>
+                  <button
+                    onClick={() => setIsFormOpen(false)}
+                    className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                  >
+                    <ApperIcon name="X" className="w-5 h-5 text-surface-500" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateTask} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Task Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={newTask.title}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Enter task title..."
+                      className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={newTask.description}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Enter task description..."
+                      rows={3}
+                      className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                        Due Date
+                      </label>
+                      <input
+                        type="date"
+                        value={newTask.dueDate}
+                        onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
+                        className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                        Priority
+                      </label>
+                      <select
+                        value={newTask.priority}
+                        onChange={(e) => setNewTask(prev => ({ ...prev, priority: e.target.value }))}
+                        className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                      >
+                        {priorities.map(priority => (
+                          <option key={priority} value={priority}>
+                            {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={newTask.category}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                    >
+                      <option value="">Select category...</option>
+                      {categories.map(category => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsFormOpen(false)}
+                      className="px-6 py-3 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 font-semibold rounded-xl hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl shadow-soft hover:shadow-card transition-all duration-200"
+                    >
+                      Create Task
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+export default MainFeature
