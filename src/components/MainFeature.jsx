@@ -1103,7 +1103,7 @@ const MainFeature = () => {
                         estimatedHours: 1,
                         attachments: [],
                         comments: [],
-                    }}
+                        comments: []
                     className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
                   >
                     <ApperIcon name="X" className="w-5 h-5 text-surface-500" />
