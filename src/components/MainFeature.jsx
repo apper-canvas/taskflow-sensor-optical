@@ -117,25 +117,6 @@ const MainFeature = () => {
         ? { ...task, ...updates, updatedAt: new Date().toISOString() }
         : task
     ))
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
-        : task
-    ))
-    
-    if (newStatus === 'completed') {
-      toast.success('Task completed! 🎉')
-    } else {
-      toast.info(`Task marked as ${newStatus.replace('-', ' ')}`)
-    }
-  }
-
-  const handleDeleteTask = (taskId) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId))
-    toast.success('Task deleted successfully')
-  }
-
-  const handleEditTask = (task) => {
     setSelectedTask(task)
     setNewTask({
       title: task.title,
@@ -961,7 +942,7 @@ const MainFeature = () => {
                                 {task.category}
                               </span>
                             </div>
-                        )}
+                          )}
                         
                         {/* Attachments and Comments indicators */}
                         <div className="flex items-center space-x-3">
@@ -980,7 +961,6 @@ const MainFeature = () => {
                                 {getTotalComments(task.comments)}
                               </span>
                             </div>
-                          )}
                           )}
                         </div>
                       </div>
@@ -1047,13 +1027,13 @@ const MainFeature = () => {
                       setSelectedTask(null)
                       setNewTask({
                         title: '',
-                        description: '',
-                        estimatedHours: 1,
-                        attachments: [],
-                        comments: []
+                        dueDate: '',
                         priority: 'medium',
                         category: '',
                         project: '',
+                        description: '',
+                        estimatedHours: 1,
+                        comments: []
                         estimatedHours: 1
                       })
                     }}
