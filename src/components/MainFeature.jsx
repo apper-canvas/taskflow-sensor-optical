@@ -6,6 +6,7 @@ import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import ApperIcon from './ApperIcon'
 import { useDropzone } from 'react-dropzone'
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 
 const localizer = momentLocalizer(moment)
 
@@ -22,7 +23,8 @@ const MainFeature = () => {
       project: 'TaskFlow MVP',
       estimatedHours: 8,
       attachments: [],
-      comments: []
+      comments: [],
+      position: 0
     },
     {
       id: '2',
@@ -35,7 +37,8 @@ const MainFeature = () => {
       project: 'TaskFlow MVP',
       estimatedHours: 4,
       attachments: [],
-      comments: []
+      comments: [],
+      position: 1
     }
   ])
 
@@ -71,6 +74,7 @@ const MainFeature = () => {
 
     const task = {
       id: Date.now().toString(),
+      position: tasks.length,
       ...newTask,
       status: 'pending',
       createdAt: new Date().toISOString(),
@@ -89,7 +93,8 @@ const MainFeature = () => {
       project: '',
       estimatedHours: 1,
       attachments: [],
-      comments: []
+      comments: [],
+      position: tasks.length
     })
     setIsFormOpen(false)
     toast.success('Task created successfully!')
@@ -143,6 +148,33 @@ const MainFeature = () => {
   }
 
   // File attachment handlers
+  // Drag and drop handlers
+  const handleDragEnd = (result) => {
+    if (!result.destination) {
+      return
+    }
+
+    const { source, destination } = result
+    
+    if (source.index === destination.index) {
+      return
+    }
+
+    const filteredTasks = getFilteredTasks().sort((a, b) => a.position - b.position)
+    const reorderedTasks = Array.from(filteredTasks)
+    const [reorderedItem] = reorderedTasks.splice(source.index, 1)
+    reorderedTasks.splice(destination.index, 0, reorderedItem)
+
+    // Update positions
+    const updatedTasks = tasks.map(task => {
+      const newIndex = reorderedTasks.findIndex(t => t.id === task.id)
+      return newIndex !== -1 ? { ...task, position: newIndex } : task
+    })
+
+    setTasks(updatedTasks)
+    toast.success('Task order updated successfully!')
+  }
+
   const handleFileUpload = (acceptedFiles) => {
     const maxSize = 10 * 1024 * 1024 // 10MB
     const allowedTypes = [
@@ -348,7 +380,7 @@ const MainFeature = () => {
       )
     }
 
-    return filtered
+    return filtered.sort((a, b) => a.position - b.position)
   }
 
   const getPriorityColor = (priority) => {
@@ -864,7 +896,15 @@ const MainFeature = () => {
         {(() => {
           const filteredTasks = getFilteredTasks()
           return (
-            <AnimatePresence mode="popLayout">
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="task-list">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-4"
+                  >
+                    <AnimatePresence mode="popLayout">
           {filteredTasks.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -884,49 +924,57 @@ const MainFeature = () => {
             </motion.div>
           ) : (
             filteredTasks.map((task, index) => (
-              <motion.div
-                key={task.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -300 }}
-                transition={{ delay: index * 0.1 }}
-                className={`bg-white dark:bg-surface-800 rounded-2xl p-4 md:p-6 shadow-soft border border-surface-200 dark:border-surface-700 hover:shadow-card transition-all duration-200 ${
-                  task.priority === 'high' ? 'priority-high' : 
-                  task.priority === 'medium' ? 'priority-medium' : 'priority-low'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start space-x-3">
-                      <button
-                        onClick={() => {
-                          const nextStatus = task.status === 'pending' ? 'in-progress' :
-                                           task.status === 'in-progress' ? 'completed' : 'pending'
-                          handleUpdateTaskStatus(task.id, nextStatus)
-                        }}
-                        className="mt-1 flex-shrink-0"
-                      >
-                        <ApperIcon 
-                          name={getStatusIcon(task.status)}
-                          className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${
-                            task.status === 'completed' ? 'text-green-500' :
-                            task.status === 'in-progress' ? 'text-yellow-500' : 'text-surface-400'
-                          }`}
-                        />
-                      </button>
-                      
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`text-lg md:text-xl font-semibold mb-2 ${
-                          task.status === 'completed' ? 'line-through text-surface-500' : 'text-surface-900 dark:text-white'
-                        }`}>
-                          {task.title}
-                        </h3>
+              <Draggable key={task.id} draggableId={task.id} index={index}>
+                {(provided, snapshot) => (
+                  <motion.div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -300 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={`bg-white dark:bg-surface-800 rounded-2xl p-4 md:p-6 shadow-soft border border-surface-200 dark:border-surface-700 hover:shadow-card transition-all duration-200 ${
+                      task.priority === 'high' ? 'priority-high' : 
+                      task.priority === 'medium' ? 'priority-medium' : 'priority-low'
+                    } ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-xl' : ''}`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
+                      <div className="flex items-start space-x-3 flex-1 min-w-0">
+                        <div
+                          {...provided.dragHandleProps}
+                          className="mt-1 p-1 hover:bg-surface-100 dark:hover:bg-surface-700 rounded cursor-grab active:cursor-grabbing"
+                        >
+                          <ApperIcon name="GripVertical" className="w-5 h-5 text-surface-400" />
+                        </div>
+                        <button
+                          onClick={() => {
+                            const nextStatus = task.status === 'pending' ? 'in-progress' :
+                                             task.status === 'in-progress' ? 'completed' : 'pending'
+                            handleUpdateTaskStatus(task.id, nextStatus)
+                          }}
+                          className="mt-1 flex-shrink-0"
+                        >
+                          <ApperIcon 
+                            name={getStatusIcon(task.status)}
+                            className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${
+                              task.status === 'completed' ? 'text-green-500' :
+                              task.status === 'in-progress' ? 'text-yellow-500' : 'text-surface-400'
+                            }`}
+                          />
+                        </button>
                         
-                        {task.description && (
-                          <p className="text-surface-600 dark:text-surface-400 mb-3 text-sm md:text-base leading-relaxed">
-                            {task.description}
-                          </p>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`text-lg md:text-xl font-semibold mb-2 ${
+                            task.status === 'completed' ? 'line-through text-surface-500' : 'text-surface-900 dark:text-white'
+                          }`}>
+                            {task.title}
+                          </h3>
+                          
+                          {task.description && (
+                            <p className="text-surface-600 dark:text-surface-400 mb-3 text-sm md:text-base leading-relaxed">
+                              {task.description}
+                            </p>
+                          )}
                         
                         <div className="flex flex-wrap items-center gap-3 text-sm">
                           <div className="flex items-center space-x-1">
@@ -975,40 +1023,45 @@ const MainFeature = () => {
                         </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
                   
-                  <div className="flex items-center space-x-2 sm:ml-4">
-                    <button
-                      onClick={() => handleEditTask(task)}
-                      className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    >
-                      <ApperIcon name="Edit" className="w-4 h-4" />
-                    </button>
-                    <select
-                      value={task.status}
-                      onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
-                      className="px-3 py-1 bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary"
-                    >
-                      {statuses.map(status => (
-                        <option key={status} value={status}>
-                          {status.replace('-', ' ')}
-                        </option>
-                      ))}
-                    </select>
+                      <div className="flex items-center space-x-2 sm:ml-4">
+                        <button
+                          onClick={() => handleEditTask(task)}
+                          className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        >
+                          <ApperIcon name="Edit" className="w-4 h-4" />
+                        </button>
+                        <select
+                          value={task.status}
+                          onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
+                          className="px-3 py-1 bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary"
+                        >
+                          {statuses.map(status => (
+                            <option key={status} value={status}>
+                              {status.replace('-', ' ')}
+                            </option>
+                          ))}
+                        </select>
                     
-                    <button
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    >
-                      <ApperIcon name="Trash2" className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                          <ApperIcon name="Trash2" className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </Draggable>
             ))
           )}
-        </AnimatePresence>
+                    </AnimatePresence>
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           );
         })()}
         </div>
@@ -1048,6 +1101,8 @@ const MainFeature = () => {
                         description: '',
                         estimatedHours: 1,
                         comments: []
+                        attachments: [],
+                        position: tasks.length
                       })
                     }}
                     className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
@@ -1186,7 +1241,8 @@ const MainFeature = () => {
                           title: '', description: '', dueDate: '', priority: 'medium', 
                           category: '', project: '', estimatedHours: 1,
                           attachments: [],
-                          comments: []
+                          comments: [],
+                          position: tasks.length
                         })
                       }}
                       className="px-6 py-3 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 font-semibold rounded-xl hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
