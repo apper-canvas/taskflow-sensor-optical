@@ -16,7 +16,9 @@
     "react-toastify": "^11.0.5",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.299.0",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "react-big-calendar": "^1.8.2",
+    "moment": "^2.29.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
-import { format, isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns'
+import { format, isToday, isTomorrow, isThisWeek, parseISO, addDays, startOfMonth, endOfMonth } from 'date-fns'
+import { Calendar, momentLocalizer } from 'react-big-calendar'
+import moment from 'moment'
 import ApperIcon from './ApperIcon'
+
+const localizer = momentLocalizer(moment)
 
 const MainFeature = () => {
   const [tasks, setTasks] = useState([
@@ -13,7 +17,9 @@ const MainFeature = () => {
       dueDate: new Date().toISOString().split('T')[0],
       priority: 'high',
       status: 'pending',
-      category: 'Design'
+      category: 'Design',
+      project: 'TaskFlow MVP',
+      estimatedHours: 8
     },
     {
       id: '2',
@@ -22,24 +28,31 @@ const MainFeature = () => {
       dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
       priority: 'medium',
       status: 'in-progress',
-      category: 'Development'
+      category: 'Development',
+      project: 'TaskFlow MVP',
+      estimatedHours: 4
     }
   ])
 
   const [filter, setFilter] = useState('all')
+  const [currentView, setCurrentView] = useState('list')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [selectedTask, setSelectedTask] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
     dueDate: '',
     priority: 'medium',
-    category: ''
+    category: '',
+    project: '',
+    estimatedHours: 1
   })
 
   const priorities = ['low', 'medium', 'high']
   const statuses = ['pending', 'in-progress', 'completed']
   const categories = ['Design', 'Development', 'Marketing', 'Research', 'Planning']
+  const projects = ['TaskFlow MVP', 'Marketing Campaign', 'User Research', 'Product Enhancement']
 
   const handleCreateTask = (e) => {
     e.preventDefault()
@@ -63,7 +76,9 @@ const MainFeature = () => {
       description: '',
       dueDate: '',
       priority: 'medium',
-      category: ''
+      category: '',
+      project: '',
+      estimatedHours: 1
     })
     setIsFormOpen(false)
     toast.success('Task created successfully!')
@@ -86,6 +101,21 @@ const MainFeature = () => {
   const handleDeleteTask = (taskId) => {
     setTasks(prev => prev.filter(task => task.id !== taskId))
     toast.success('Task deleted successfully')
+  }
+
+  const handleEditTask = (task) => {
+    setSelectedTask(task)
+    setNewTask({
+      title: task.title,
+      description: task.description,
+      dueDate: task.dueDate,
+      priority: task.priority,
+      category: task.category,
+      project: task.project || '',
+      estimatedHours: task.estimatedHours || 1
+    })
+    setIsFormOpen(true)
+    toast.info('Edit mode enabled')
   }
 
   const getFilteredTasks = () => {
@@ -149,6 +179,183 @@ const MainFeature = () => {
     return format(date, 'MMM d, yyyy')
   }
 
+  // Calendar event conversion
+  const getCalendarEvents = () => {
+    return getFilteredTasks().map(task => ({
+      id: task.id,
+      title: task.title,
+      start: new Date(task.dueDate),
+      end: new Date(task.dueDate),
+      resource: task,
+      className: `priority-${task.priority} status-${task.status}`
+    }))
+  }
+
+  const handleSelectEvent = (event) => {
+    setSelectedTask(event.resource)
+    handleEditTask(event.resource)
+  }
+
+  const handleSelectSlot = ({ start }) => {
+    setNewTask(prev => ({
+      ...prev,
+      dueDate: moment(start).format('YYYY-MM-DD')
+    }))
+    setIsFormOpen(true)
+  }
+
+  // Timeline component
+  const TaskTimeline = () => {
+    const timelineTasks = getFilteredTasks().sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+    const projectGroups = {}
+    
+    timelineTasks.forEach(task => {
+      const project = task.project || 'Unassigned'
+      if (!projectGroups[project]) {
+        projectGroups[project] = []
+      }
+      projectGroups[project].push(task)
+    })
+
+    return (
+      <div className="timeline-container">
+        <h3 className="text-xl font-bold text-surface-900 dark:text-white mb-6">Project Timeline</h3>
+        
+        {Object.entries(projectGroups).map(([project, projectTasks]) => (
+          <div key={project} className="mb-8">
+            <h4 className="text-lg font-semibold text-primary mb-4 flex items-center">
+              <ApperIcon name="Folder" className="w-5 h-5 mr-2" />
+              {project}
+            </h4>
+            
+            <div className="ml-4">
+              {projectTasks.map((task, index) => (
+                <div 
+                  key={task.id} 
+                  className={`timeline-item status-${task.status} priority-${task.priority}`}
+                >
+                  <div className="bg-surface-50 dark:bg-surface-700 rounded-xl p-4 hover:shadow-card transition-all duration-200 cursor-pointer"
+                       onClick={() => handleEditTask(task)}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h5 className={`font-semibold text-surface-900 dark:text-white mb-1 ${
+                          task.status === 'completed' ? 'line-through opacity-60' : ''
+                        }`}>
+                          {task.title}
+                        </h5>
+                        <p className="text-surface-600 dark:text-surface-400 text-sm mb-2">
+                          {task.description}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs">
+                          <span className="flex items-center space-x-1">
+                            <ApperIcon name="Calendar" className="w-3 h-3" />
+                            <span>{getDateLabel(task.dueDate)}</span>
+                          </span>
+                          <span className={`flex items-center space-x-1 ${getPriorityColor(task.priority)}`}>
+                            <ApperIcon name="Flag" className="w-3 h-3" />
+                            <span className="capitalize">{task.priority}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <ApperIcon name="Clock" className="w-3 h-3" />
+                            <span>{task.estimatedHours}h</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <ApperIcon 
+                          name={getStatusIcon(task.status)}
+                          className={`w-5 h-5 ${
+                            task.status === 'completed' ? 'text-green-500' :
+                            task.status === 'in-progress' ? 'text-blue-500' : 'text-surface-400'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        
+        {Object.keys(projectGroups).length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-surface-100 dark:bg-surface-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <ApperIcon name="Timeline" className="w-8 h-8 text-surface-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-2">
+              No timeline data
+            </h3>
+            <p className="text-surface-600 dark:text-surface-400">
+              Create tasks with due dates to see your project timeline
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Calendar component
+  const TaskCalendar = () => (
+    <div className="calendar-container p-6">
+      <Calendar
+        localizer={localizer}
+        events={getCalendarEvents()}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 600 }}
+        onSelectEvent={handleSelectEvent}
+        onSelectSlot={handleSelectSlot}
+        selectable
+        eventPropGetter={(event) => ({
+          className: event.className
+        })}
+        views={['month', 'week', 'day']}
+        defaultView="month"
+        popup
+        showMultiDayTimes
+        components={{
+          event: ({ event }) => (
+            <div className="flex items-center justify-between w-full">
+              <span className="font-medium truncate">{event.title}</span>
+              <ApperIcon 
+                name={getStatusIcon(event.resource.status)}
+                className="w-3 h-3 ml-1 flex-shrink-0"
+              />
+            </div>
+          )
+        }}
+      />
+    </div>
+  )
+
+  // View switcher component
+  const ViewSwitcher = () => (
+    <div className="view-switcher">
+      <button
+        onClick={() => setCurrentView('list')}
+        className={currentView === 'list' ? 'active' : ''}
+      >
+        <ApperIcon name="List" className="w-4 h-4 mr-2" />
+        List
+      </button>
+      <button
+        onClick={() => setCurrentView('calendar')}
+        className={currentView === 'calendar' ? 'active' : ''}
+      >
+        <ApperIcon name="Calendar" className="w-4 h-4 mr-2" />
+        Calendar
+      </button>
+      <button
+        onClick={() => setCurrentView('timeline')}
+        className={currentView === 'timeline' ? 'active' : ''}
+      >
+        <ApperIcon name="Clock" className="w-4 h-4 mr-2" />
+        Timeline
+      </button>
+    </div>
+  )
+
   const filteredTasks = getFilteredTasks()
 
   return (
@@ -164,6 +371,12 @@ const MainFeature = () => {
           </p>
         </div>
 
+        <div className="flex flex-col sm:flex-row gap-4">
+          <ViewSwitcher />
+        </div>
+      </div>
+      
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
         <motion.button
           onClick={() => setIsFormOpen(true)}
           className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl shadow-soft hover:shadow-card transition-all duration-200 w-full lg:w-auto"
@@ -176,7 +389,8 @@ const MainFeature = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="mb-8 space-y-4">
+      {(currentView === 'list' || currentView === 'timeline') && (
+        <div className="mb-8 space-y-4">
         {/* Search Bar */}
         <div className="relative">
           <ApperIcon name="Search" className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400" />
@@ -216,10 +430,16 @@ const MainFeature = () => {
             </motion.button>
           ))}
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Task List */}
-      <div className="space-y-4">
+      {/* Content based on current view */}
+      {currentView === 'calendar' && <TaskCalendar />}
+      {currentView === 'timeline' && <TaskTimeline />}
+      
+      {/* Task List - only show in list view */}
+      {currentView === 'list' && (
+        <div className="space-y-4">
         <AnimatePresence mode="popLayout">
           {filteredTasks.length === 0 ? (
             <motion.div
@@ -313,6 +533,12 @@ const MainFeature = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2 sm:ml-4">
+                    <button
+                      onClick={() => handleEditTask(task)}
+                      className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    >
+                      <ApperIcon name="Edit" className="w-4 h-4" />
+                    </button>
                     <select
                       value={task.status}
                       onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
@@ -337,9 +563,9 @@ const MainFeature = () => {
             ))
           )}
         </AnimatePresence>
-      </div>
-
-      {/* Create Task Modal */}
+        </div>
+      )}
+      {/* Create/Edit Task Modal */}
       <AnimatePresence>
         {isFormOpen && (
           <motion.div
@@ -358,10 +584,22 @@ const MainFeature = () => {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl md:text-2xl font-bold text-surface-900 dark:text-white">
-                    Create New Task
+                    {selectedTask ? 'Edit Task' : 'Create New Task'}
                   </h3>
                   <button
-                    onClick={() => setIsFormOpen(false)}
+                    onClick={() => {
+                      setIsFormOpen(false)
+                      setSelectedTask(null)
+                      setNewTask({
+                        title: '',
+                        description: '',
+                        dueDate: '',
+                        priority: 'medium',
+                        category: '',
+                        project: '',
+                        estimatedHours: 1
+                      })
+                    }}
                     className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
                   >
                     <ApperIcon name="X" className="w-5 h-5 text-surface-500" />
@@ -426,7 +664,41 @@ const MainFeature = () => {
                       </select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                        Project
+                      </label>
+                      <select
+                        value={newTask.project}
+                        onChange={(e) => setNewTask(prev => ({ ...prev, project: e.target.value }))}
+                        className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                      >
+                        <option value="">Select project...</option>
+                        {projects.map(project => (
+                          <option key={project} value={project}>
+                            {project}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                        Estimated Hours
+                      </label>
+                      <input
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        value={newTask.estimatedHours}
+                        onChange={(e) => setNewTask(prev => ({ ...prev, estimatedHours: parseFloat(e.target.value) }))}
+                        className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
                   <div>
                     <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
                       Category
@@ -448,7 +720,14 @@ const MainFeature = () => {
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => setIsFormOpen(false)}
+                      onClick={() => {
+                        setIsFormOpen(false)
+                        setSelectedTask(null)
+                        setNewTask({
+                          title: '', description: '', dueDate: '', priority: 'medium', 
+                          category: '', project: '', estimatedHours: 1
+                        })
+                      }}
                       className="px-6 py-3 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 font-semibold rounded-xl hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
                     >
                       Cancel
@@ -457,7 +736,7 @@ const MainFeature = () => {
                       type="submit"
                       className="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl shadow-soft hover:shadow-card transition-all duration-200"
                     >
-                      Create Task
+                      {selectedTask ? 'Update Task' : 'Create Task'}
                     </button>
                   </div>
                 </form>

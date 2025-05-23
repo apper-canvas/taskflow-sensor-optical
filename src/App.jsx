@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import 'react-big-calendar/lib/css/react-big-calendar.css'
+import './calendar-custom.css'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 
@@ -10,6 +12,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/calendar" element={<Home />} />
+        <Route path="/timeline" element={<Home />} />
       </Routes>
       
       <ToastContainer
