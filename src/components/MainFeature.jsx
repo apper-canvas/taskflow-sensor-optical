@@ -5,6 +5,7 @@ import { format, isToday, isTomorrow, isThisWeek, parseISO, addDays, startOfMont
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import ApperIcon from './ApperIcon'
+import { useDropzone } from 'react-dropzone'
 
 const localizer = momentLocalizer(moment)
 
@@ -19,7 +20,9 @@ const MainFeature = () => {
       status: 'pending',
       category: 'Design',
       project: 'TaskFlow MVP',
-      estimatedHours: 8
+      estimatedHours: 8,
+      attachments: [],
+      comments: []
     },
     {
       id: '2',
@@ -30,7 +33,9 @@ const MainFeature = () => {
       status: 'in-progress',
       category: 'Development',
       project: 'TaskFlow MVP',
-      estimatedHours: 4
+      estimatedHours: 4,
+      attachments: [],
+      comments: []
     }
   ])
 
@@ -46,8 +51,12 @@ const MainFeature = () => {
     priority: 'medium',
     category: '',
     project: '',
-    estimatedHours: 1
+    estimatedHours: 1,
+    attachments: [],
+    comments: []
   })
+  const [newComment, setNewComment] = useState('')
+  const [replyingTo, setReplyingTo] = useState(null)
 
   const priorities = ['low', 'medium', 'high']
   const statuses = ['pending', 'in-progress', 'completed']
@@ -67,7 +76,9 @@ const MainFeature = () => {
       ...newTask,
       status: 'pending',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      attachments: newTask.attachments || [],
+      comments: []
     }
 
     setTasks(prev => [task, ...prev])
@@ -78,13 +89,34 @@ const MainFeature = () => {
       priority: 'medium',
       category: '',
       project: '',
-      estimatedHours: 1
+      estimatedHours: 1,
+      attachments: [],
+      comments: []
     })
     setIsFormOpen(false)
     toast.success('Task created successfully!')
   }
 
   const handleUpdateTaskStatus = (taskId, newStatus) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
+        : task
+    ))
+    
+    if (newStatus === 'completed') {
+      toast.success('Task completed! 🎉')
+    } else {
+      toast.info(`Task marked as ${newStatus.replace('-', ' ')}`)
+    }
+  }
+
+  const handleUpdateTask = (taskId, updates) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, ...updates, updatedAt: new Date().toISOString() }
+        : task
+    ))
     setTasks(prev => prev.map(task => 
       task.id === taskId 
         ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
@@ -112,10 +144,188 @@ const MainFeature = () => {
       priority: task.priority,
       category: task.category,
       project: task.project || '',
-      estimatedHours: task.estimatedHours || 1
+      estimatedHours: task.estimatedHours || 1,
+      attachments: task.attachments || [],
+      comments: task.comments || []
     })
     setIsFormOpen(true)
     toast.info('Edit mode enabled')
+  }
+
+  // File attachment handlers
+  const handleFileUpload = (acceptedFiles) => {
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp'
+    ]
+
+    const validFiles = acceptedFiles.filter(file => {
+      if (file.size > maxSize) {
+        toast.error(`File ${file.name} is too large. Maximum size is 10MB.`)
+        return false
+      }
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`File type ${file.type} is not supported.`)
+        return false
+      }
+      return true
+    })
+
+    if (validFiles.length === 0) return
+
+    const newAttachments = validFiles.map(file => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+      uploadedAt: new Date().toISOString()
+    }))
+
+    setNewTask(prev => ({
+      ...prev,
+      attachments: [...(prev.attachments || []), ...newAttachments]
+    }))
+
+    toast.success(`${validFiles.length} file(s) attached successfully!`)
+  }
+
+  const handleRemoveAttachment = (attachmentId) => {
+    setNewTask(prev => ({
+      ...prev,
+      attachments: prev.attachments?.filter(att => att.id !== attachmentId) || []
+    }))
+    toast.info('Attachment removed')
+  }
+
+  // Comment handlers
+  const handleAddComment = (taskId, comment, parentId = null) => {
+    if (!comment.trim()) {
+      toast.error('Comment cannot be empty')
+      return
+    }
+
+    const newCommentObj = {
+      id: Date.now() + Math.random(),
+      text: comment.trim(),
+      author: 'Current User', // In real app, this would come from auth
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
+      createdAt: new Date().toISOString(),
+      parentId,
+      replies: []
+    }
+
+    setTasks(prev => prev.map(task => {
+      if (task.id === taskId) {
+        const comments = task.comments || []
+        if (parentId) {
+          // Add as reply
+          const updateReplies = (commentsList) => {
+            return commentsList.map(comment => {
+              if (comment.id === parentId) {
+                return {
+                  ...comment,
+                  replies: [...(comment.replies || []), newCommentObj]
+                }
+              }
+              if (comment.replies?.length > 0) {
+                return {
+                  ...comment,
+                  replies: updateReplies(comment.replies)
+                }
+              }
+              return comment
+            })
+          }
+          return {
+            ...task,
+            comments: updateReplies(comments)
+          }
+        } else {
+          // Add as top-level comment
+          return {
+            ...task,
+            comments: [...comments, newCommentObj]
+          }
+        }
+      }
+      return task
+    }))
+
+    setNewComment('')
+    setReplyingTo(null)
+    toast.success('Comment added successfully!')
+  }
+
+  const handleDeleteComment = (taskId, commentId) => {
+    setTasks(prev => prev.map(task => {
+      if (task.id === taskId) {
+        const removeComment = (commentsList) => {
+          return commentsList.filter(comment => {
+            if (comment.id === commentId) return false
+            if (comment.replies?.length > 0) {
+              comment.replies = removeComment(comment.replies)
+            }
+            return true
+          })
+        }
+        return {
+          ...task,
+          comments: removeComment(task.comments || [])
+        }
+      }
+      return task
+    }))
+    toast.success('Comment deleted')
+  }
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  const getFileIcon = (type) => {
+    if (type.startsWith('image/')) return 'Image'
+    if (type.includes('pdf')) return 'FileText'
+    if (type.includes('word') || type.includes('document')) return 'FileText'
+    if (type.includes('excel') || type.includes('spreadsheet')) return 'Table'
+    return 'File'
+  }
+
+  const getTotalComments = (comments) => {
+    if (!comments || comments.length === 0) return 0
+    return comments.reduce((total, comment) => {
+      return total + 1 + getTotalComments(comment.replies || [])
+    }, 0)
+  }
+
+  const getTimeAgo = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) return `${diffInHours}h ago`
+    
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}d ago`
+    
+    return format(date, 'MMM d, yyyy')
   }
 
   const getFilteredTasks = () => {
@@ -205,6 +415,231 @@ const MainFeature = () => {
   }
 
   // Timeline component
+  const FileUpload = () => {
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+      onDrop: handleFileUpload,
+      accept: {
+        'application/pdf': ['.pdf'],
+        'application/msword': ['.doc'],
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+        'application/vnd.ms-excel': ['.xls'],
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+        'text/plain': ['.txt'],
+        'image/jpeg': ['.jpg', '.jpeg'],
+        'image/png': ['.png'],
+        'image/gif': ['.gif'],
+        'image/webp': ['.webp']
+      },
+      multiple: true
+    })
+
+    return (
+      <div>
+        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+          File Attachments
+        </label>
+        <div
+          {...getRootProps()}
+          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+            isDragActive
+              ? 'border-primary bg-primary/5'
+              : 'border-surface-300 dark:border-surface-600 hover:border-primary'
+          }`}
+        >
+          <input {...getInputProps()} />
+          <ApperIcon name="Upload" className="w-8 h-8 text-surface-400 mx-auto mb-2" />
+          {isDragActive ? (
+            <p className="text-surface-600 dark:text-surface-400">Drop files here...</p>
+          ) : (
+            <div>
+              <p className="text-surface-600 dark:text-surface-400 mb-1">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-xs text-surface-500">
+                PDF, DOC, XLS, TXT, Images up to 10MB
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Display attached files */}
+        {newTask.attachments && newTask.attachments.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm font-medium text-surface-700 dark:text-surface-300">
+              Attached Files ({newTask.attachments.length})
+            </p>
+            {newTask.attachments.map((file) => (
+              <div
+                key={file.id}
+                className="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-700 rounded-lg"
+              >
+                <div className="flex items-center space-x-3">
+                  <ApperIcon name={getFileIcon(file.type)} className="w-5 h-5 text-surface-500" />
+                  <div>
+                    <p className="text-sm font-medium text-surface-900 dark:text-white truncate max-w-[200px]">
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-surface-500">{formatFileSize(file.size)}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveAttachment(file.id)}
+                  className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                >
+                  <ApperIcon name="X" className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const CommentSection = ({ task }) => {
+    const [localComment, setLocalComment] = useState('')
+    const [localReplyingTo, setLocalReplyingTo] = useState(null)
+    const [localReplyText, setLocalReplyText] = useState('')
+
+    const renderComment = (comment, depth = 0) => (
+      <div key={comment.id} className={`${depth > 0 ? 'ml-8 mt-3' : 'mb-4'}`}>
+        <div className="flex items-start space-x-3">
+          <img
+            src={comment.avatar}
+            alt={comment.author}
+            className="w-8 h-8 rounded-full flex-shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="bg-surface-50 dark:bg-surface-700 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-surface-900 dark:text-white">
+                  {comment.author}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-surface-500">
+                    {getTimeAgo(comment.createdAt)}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteComment(task.id, comment.id)}
+                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded"
+                  >
+                    <ApperIcon name="Trash2" className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              <p className="text-sm text-surface-700 dark:text-surface-300 whitespace-pre-wrap">
+                {comment.text}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setLocalReplyingTo(localReplyingTo === comment.id ? null : comment.id)
+                setLocalReplyText('')
+              }}
+              className="text-xs text-primary hover:text-primary-dark mt-1"
+            >
+              Reply
+            </button>
+
+            {localReplyingTo === comment.id && (
+              <div className="mt-2 flex space-x-2">
+                <textarea
+                  value={localReplyText}
+                  onChange={(e) => setLocalReplyText(e.target.value)}
+                  placeholder="Write a reply..."
+                  className="flex-1 px-3 py-2 text-sm bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                  rows={2}
+                />
+                <div className="flex flex-col space-y-1">
+                  <button
+                    onClick={() => {
+                      if (localReplyText.trim()) {
+                        handleAddComment(task.id, localReplyText, comment.id)
+                        setLocalReplyText('')
+                        setLocalReplyingTo(null)
+                      }
+                    }}
+                    className="px-3 py-1 bg-primary text-white text-xs rounded"
+                  >
+                    Reply
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLocalReplyingTo(null)
+                      setLocalReplyText('')
+                    }}
+                    className="px-3 py-1 bg-surface-200 dark:bg-surface-600 text-surface-700 dark:text-surface-300 text-xs rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {comment.replies && comment.replies.map(reply => renderComment(reply, depth + 1))}
+          </div>
+        </div>
+      </div>
+    )
+
+    return (
+      <div>
+        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-3">
+          Comments ({getTotalComments(task.comments || [])})
+        </label>
+        
+        {/* Add new comment */}
+        <div className="mb-4">
+          <div className="flex space-x-3">
+            <img
+              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"
+              alt="You"
+              className="w-8 h-8 rounded-full flex-shrink-0"
+            />
+            <div className="flex-1">
+              <textarea
+                value={localComment}
+                onChange={(e) => setLocalComment(e.target.value)}
+                placeholder="Add a comment..."
+                className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                rows={3}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-surface-500">
+                  {localComment.length}/500 characters
+                </span>
+                <button
+                  onClick={() => {
+                    if (localComment.trim()) {
+                      handleAddComment(task.id, localComment)
+                      setLocalComment('')
+                    }
+                  }}
+                  disabled={!localComment.trim() || localComment.length > 500}
+                  className="px-4 py-2 bg-primary text-white text-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-dark transition-colors"
+                >
+                  Comment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Comments list */}
+        <div className="space-y-4 max-h-64 overflow-y-auto">
+          {task.comments && task.comments.length > 0 ? (
+            task.comments.map(comment => renderComment(comment))
+          ) : (
+            <p className="text-center text-surface-500 py-4">
+              No comments yet. Be the first to comment!
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const TaskTimeline = () => {
     const timelineTasks = getFilteredTasks().sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
     const projectGroups = {}
@@ -526,6 +961,26 @@ const MainFeature = () => {
                                 {task.category}
                               </span>
                             </div>
+                        )}
+                        
+                        {/* Attachments and Comments indicators */}
+                        <div className="flex items-center space-x-3">
+                          {task.attachments && task.attachments.length > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <ApperIcon name="Paperclip" className="w-4 h-4 text-surface-400" />
+                              <span className="text-surface-600 dark:text-surface-400 text-xs">
+                                {task.attachments.length}
+                              </span>
+                            </div>
+                          )}
+                          {task.comments && getTotalComments(task.comments) > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <ApperIcon name="MessageCircle" className="w-4 h-4 text-surface-400" />
+                              <span className="text-surface-600 dark:text-surface-400 text-xs">
+                                {getTotalComments(task.comments)}
+                              </span>
+                            </div>
+                          )}
                           )}
                         </div>
                       </div>
@@ -593,7 +1048,9 @@ const MainFeature = () => {
                       setNewTask({
                         title: '',
                         description: '',
-                        dueDate: '',
+                        estimatedHours: 1,
+                        attachments: [],
+                        comments: []
                         priority: 'medium',
                         category: '',
                         project: '',
@@ -700,6 +1157,13 @@ const MainFeature = () => {
                   </div>
 
                   <div>
+                    <FileUpload />
+                  </div>
+
+                  {selectedTask && (
+                    <CommentSection task={selectedTask} />
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
                       Category
@@ -727,7 +1191,9 @@ const MainFeature = () => {
                         setSelectedTask(null)
                         setNewTask({
                           title: '', description: '', dueDate: '', priority: 'medium', 
-                          category: '', project: '', estimatedHours: 1
+                          category: '', project: '', estimatedHours: 1,
+                          attachments: [],
+                          comments: []
                         })
                       }}
                       className="px-6 py-3 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 font-semibold rounded-xl hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"

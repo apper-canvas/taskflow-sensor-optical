@@ -18,7 +18,8 @@
     "lucide-react": "^0.299.0",
     "date-fns": "^4.1.0",
     "react-big-calendar": "^1.8.2",
-    "moment": "^2.29.4"
+    "moment": "^2.29.4",
+    "react-dropzone": "^14.2.3"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
