@@ -22,7 +22,7 @@
     "react-dropzone": "^14.2.3",
     "react-beautiful-dnd": "^13.1.1",
     "@reduxjs/toolkit": "^1.9.5",
-    "react-redux": "^8.1.2",
+  "react-redux": "^9.1.2",
     "apexcharts": "^4.5.0"
   },
   "devDependencies": {
