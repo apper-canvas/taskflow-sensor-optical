@@ -214,7 +214,7 @@ const MainFeature = () => {
 
     // Update positions
     const updatedTasks = tasks.map(task => {
-      const newIndex = reorderedTasks.findIndex(t => t.id === task.id)
+      const newIndex = reorderedTasks.findIndex(t => t.Id === task.Id)
       return newIndex !== -1 ? { ...task, position: newIndex } : task
     })
 
@@ -801,7 +801,7 @@ const MainFeature = () => {
         {Object.keys(projectGroups).length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-surface-100 dark:bg-surface-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <ApperIcon name="Timeline" className="w-8 h-8 text-surface-400" />
+              <ApperIcon name="Clock" className="w-8 h-8 text-surface-400" />
             </div>
             <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-2">
               No timeline data
@@ -1244,9 +1244,9 @@ const MainFeature = () => {
                         className="w-full px-4 py-3 bg-surface-50 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                       >
                         <option value="">Select project...</option>
-                        {projects.map(project => (
-                          <option key={project} value={project}>
-                            {project.Name || project}
+                        {projects.map((project, index) => (
+                          <option key={project?.Id || project?.name || index} value={project?.Id || project?.name || project}>
+                            {project?.Name || project?.name || project}
                           </option>
                         ))}
                       </select>
