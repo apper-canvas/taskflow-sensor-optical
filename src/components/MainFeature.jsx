@@ -664,8 +664,9 @@ const MainFeature = () => {
                       </select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
                       <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
                         Project
                       </label>
@@ -716,6 +717,7 @@ const MainFeature = () => {
                       ))}
                     </select>
                   </div>
+
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
                     <button
