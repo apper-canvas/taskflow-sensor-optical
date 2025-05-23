@@ -55,8 +55,6 @@ const MainFeature = () => {
     attachments: [],
     comments: []
   })
-  const [newComment, setNewComment] = useState('')
-  const [replyingTo, setReplyingTo] = useState(null)
 
   const priorities = ['low', 'medium', 'high']
   const statuses = ['pending', 'in-progress', 'completed']
@@ -253,8 +251,6 @@ const MainFeature = () => {
       return task
     }))
 
-    setNewComment('')
-    setReplyingTo(null)
     toast.success('Comment added successfully!')
   }
 
@@ -1158,7 +1154,7 @@ const MainFeature = () => {
                   </div>
 
                   {selectedTask && (
-                    <CommentSection task={selectedTask} />
+                    <CommentSection task={{ ...selectedTask, comments: tasks.find(t => t.id === selectedTask.id)?.comments || [] }} />
                   )}
 
                   <div>
