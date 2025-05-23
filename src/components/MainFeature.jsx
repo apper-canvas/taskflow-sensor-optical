@@ -867,7 +867,8 @@ const MainFeature = () => {
         <div className="space-y-4">
         {(() => {
           const filteredTasks = getFilteredTasks()
-        <AnimatePresence mode="popLayout">
+          return (
+            <AnimatePresence mode="popLayout">
           {filteredTasks.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -1012,6 +1013,7 @@ const MainFeature = () => {
             ))
           )}
         </AnimatePresence>
+          );
         })()}
         </div>
       )}
@@ -1049,7 +1051,6 @@ const MainFeature = () => {
                         project: '',
                         description: '',
                         estimatedHours: 1,
-                        description: '',
                         comments: []
                       })
                     }}
