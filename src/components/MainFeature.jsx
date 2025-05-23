@@ -117,6 +117,39 @@ const MainFeature = () => {
         ? { ...task, ...updates, updatedAt: new Date().toISOString() }
         : task
     ))
+    toast.success('Task updated successfully!')
+  }
+
+  const handleEditTask = (task) => {
+    setSelectedTask(task)
+    setNewTask({
+      title: task.title,
+      description: task.description,
+      dueDate: task.dueDate,
+      priority: task.priority,
+      category: task.category,
+      project: task.project || '',
+      estimatedHours: task.estimatedHours || 1,
+      attachments: task.attachments || [],
+      comments: task.comments || []
+    })
+    setIsFormOpen(true)
+    toast.info('Edit mode enabled')
+  }
+
+  const handleDeleteTask = (taskId) => {
+    if (window.confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+      setTasks(prev => prev.filter(task => task.id !== taskId))
+      toast.success('Task deleted successfully!')
+    }
+  }
+
+  const handleUpdateTask = (taskId, updates) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, ...updates, updatedAt: new Date().toISOString() }
+        : task
+    ))
     setSelectedTask(task)
     setNewTask({
       title: task.title,
@@ -965,6 +998,7 @@ const MainFeature = () => {
                           )}
                         </div>
                         </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1034,7 +1068,6 @@ const MainFeature = () => {
                         category: '',
                         project: '',
                         description: '',
-                        estimatedHours: 1,
                         attachments: [],
                         comments: []
                       })
