@@ -571,12 +571,232 @@ const Projects = () => {
           </div>
         )}
 
-        {/* Modals would go here - Create, Edit, and View modals */}
-        {/* Due to space constraints, I'm showing the structure but not the full modal implementations */}
-        {/* In a real implementation, these would be comprehensive modal components */}
+        {/* Create Project Modal */}
+        <AnimatePresence>
+          {showCreateModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowCreateModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-surface-800 rounded-2xl shadow-2xl border border-surface-200 dark:border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-surface-900 dark:text-white">Create New Project</h2>
+                    <button
+                      onClick={() => setShowCreateModal(false)}
+                      className="p-2 text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                    >
+                      <ApperIcon name="x" className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={(e) => { e.preventDefault(); handleCreateProject(); }} className="space-y-6">
+                    {/* Basic Information */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white">Basic Information</h3>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                          Project Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={newProject.name}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          placeholder="Enter project name"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                          Description *
+                        </label>
+                        <textarea
+                          value={newProject.description}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          placeholder="Enter project description"
+                          rows="3"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Status
+                          </label>
+                          <select
+                            value={newProject.status}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, status: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          >
+                            {statusOptions.map(status => (
+                              <option key={status.value} value={status.value}>{status.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Priority
+                          </label>
+                          <select
+                            value={newProject.priority}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, priority: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          >
+                            {priorityOptions.map(priority => (
+                              <option key={priority.value} value={priority.value}>{priority.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Category
+                          </label>
+                          <select
+                            value={newProject.category}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, category: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          >
+                            {categoryOptions.map(category => (
+                              <option key={category.value} value={category.value}>{category.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dates and Budget */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white">Timeline & Budget</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Start Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={newProject.startDate}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, startDate: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            End Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={newProject.endDate}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, endDate: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Budget ($)
+                          </label>
+                          <input
+                            type="number"
+                            value={newProject.budget}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
         
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Progress (%)
+                          </label>
+                          <input
+                            type="number"
+                            value={newProject.progress}
+                            onChange={(e) => setNewProject(prev => ({ ...prev, progress: Number(e.target.value) }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                      </div>
+                    </div>
         {/* Summary stats at the bottom */}
+                    {/* Team Members */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-surface-900 dark:text-white">Team Members</h3>
+                        <button
+                          type="button"
+                          onClick={() => addTeamMember(false)}
+                          className="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors"
+                        >
+                          Add Member
+                        </button>
+                      </div>
+                      
+                      {newProject.team.map((member, index) => (
+                        <div key={index} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={member}
+                            onChange={(e) => updateTeamMember(index, e.target.value, false)}
+                            className="flex-1 px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            placeholder="Team member name"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeTeamMember(index, false)}
+                            className="px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          >
+                            <ApperIcon name="trash-2" className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
         <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateModal(false)}
+                        className="flex-1 px-6 py-2 bg-surface-200 dark:bg-surface-700 text-surface-900 dark:text-white rounded-xl hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors"
+                      >
+                        Create Project
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
           <div className="bg-white dark:bg-surface-800 rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-surface-900 dark:text-white">{projects.length}</div>
             <div className="text-sm text-surface-600 dark:text-surface-400">Total Projects</div>
