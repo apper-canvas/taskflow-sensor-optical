@@ -1023,6 +1023,7 @@ const MainFeature = () => {
                         </div>
                         </div>
                         </div>
+                        </div>
                   
                       <div className="flex items-center space-x-2 sm:ml-4">
                         <button
@@ -1094,13 +1095,14 @@ const MainFeature = () => {
                       setSelectedTask(null)
                       setNewTask({
                         title: '',
+                        description: '',
                         dueDate: '',
                         priority: 'medium',
                         category: '',
                         project: '',
                         estimatedHours: 1,
-                        comments: []
                         attachments: [],
+                        comments: []
                     }}
                     className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
                   >
