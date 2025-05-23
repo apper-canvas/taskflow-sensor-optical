@@ -605,7 +605,8 @@ const MainFeature = () => {
                   <span className="text-xs text-surface-500">
                     {getTimeAgo(comment.createdAt)}
                   </span>
-                    onClick={() => handleDeleteComment(task.id, comment.id)}
+                  <button
+                    className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                     onClick={() => handleDeleteComment(task.Id, comment.id)}
                   >
                     <ApperIcon name="Trash2" className="w-3 h-3" />
@@ -1066,7 +1067,6 @@ const MainFeature = () => {
                         
                         {/* Attachments and Comments indicators */}
                         <div className="flex items-center space-x-3 mt-2">
-                        <div className="flex items-center space-x-3">
                           {task.attachments && task.attachments.length > 0 && (
                             <div className="flex items-center space-x-1">
                               <ApperIcon name="Paperclip" className="w-4 h-4 text-surface-400" />
@@ -1083,7 +1083,6 @@ const MainFeature = () => {
                               </span>
                             </div>
                           )}
-                        </div>
                         </div>
                         </div>
                         </div>
@@ -1305,7 +1304,6 @@ const MainFeature = () => {
                           title: '', description: '', dueDate: '', priority: 'medium', 
                           category: '', project: '', estimatedHours: 1,
                           comments: []
-                          position: tasks.length
                         })
                       }}
                       className="px-6 py-3 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 font-semibold rounded-xl hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
