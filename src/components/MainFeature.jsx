@@ -7,46 +7,58 @@ import moment from 'moment'
 import ApperIcon from './ApperIcon'
 import { useDropzone } from 'react-dropzone'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
+import TaskService from '../services/TaskService'
+import AttachmentService from '../services/AttachmentService'
+import CommentService from '../services/CommentService'
+import ProjectService from '../services/ProjectService'
 
 const localizer = momentLocalizer(moment)
 
 const MainFeature = () => {
-  const [tasks, setTasks] = useState([
-    {
-      id: '1',
-      title: 'Design TaskFlow Landing Page',
-      description: 'Create a modern, responsive landing page with dark mode support',
-      dueDate: new Date().toISOString().split('T')[0],
-      priority: 'high',
-      status: 'pending',
-      category: 'Design',
-      project: 'TaskFlow MVP',
-      estimatedHours: 8,
-      attachments: [],
-      comments: [],
-      position: 0
-    },
-    {
-      id: '2',
-      title: 'Implement Task Filtering',
-      description: 'Add filtering capabilities by priority, status, and due date',
-      dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-      priority: 'medium',
-      status: 'in-progress',
-      category: 'Development',
-      project: 'TaskFlow MVP',
-      estimatedHours: 4,
-      attachments: [],
-      comments: [],
-      position: 1
-    }
-  ])
+  const [tasks, setTasks] = useState([])
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const [filter, setFilter] = useState('all')
   const [currentView, setCurrentView] = useState('list')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Load data on component mount
+  useEffect(() => {
+    loadTasks()
+    loadProjects()
+  }, [])
+
+  const loadTasks = async () => {
+    try {
+      setLoading(true)
+      const tasksData = await TaskService.fetchTasks()
+      setTasks(tasksData || [])
+      setError(null)
+    } catch (err) {
+      console.error('Error loading tasks:', err)
+      setError('Failed to load tasks')
+      setTasks([])
+      toast.error('Failed to load tasks')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadProjects = async () => {
+    try {
+      const projectsData = await ProjectService.fetchProjects()
+      setProjects(projectsData || [])
+    } catch (err) {
+      console.error('Error loading projects:', err)
+      toast.error('Failed to load projects')
+      setProjects([])
+    }
+  }
+
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -62,9 +74,8 @@ const MainFeature = () => {
   const priorities = ['low', 'medium', 'high']
   const statuses = ['pending', 'in-progress', 'completed']
   const categories = ['Design', 'Development', 'Marketing', 'Research', 'Planning']
-  const projects = ['TaskFlow MVP', 'Marketing Campaign', 'User Research', 'Product Enhancement']
 
-  const handleCreateTask = (e) => {
+  const handleCreateTask = async (e) => {
     e.preventDefault()
     
     if (!newTask.title.trim()) {
@@ -72,18 +83,46 @@ const MainFeature = () => {
       return
     }
 
-    const task = {
-      id: Date.now().toString(),
-      position: tasks.length,
-      ...newTask,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      attachments: newTask.attachments || [],
-      comments: []
-    }
+    try {
+      setLoading(true)
+      
+      const taskData = {
+        title: newTask.title,
+        description: newTask.description,
+        dueDate: newTask.dueDate,
+        priority: newTask.priority,
+        status: selectedTask ? selectedTask.status : 'pending',
+        category: newTask.category,
+        estimatedHours: newTask.estimatedHours,
+        position: selectedTask ? selectedTask.position : tasks.length,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        project: newTask.project
+      }
 
-    setTasks(prev => [task, ...prev])
+      let result
+      if (selectedTask) {
+        result = await TaskService.updateTask(selectedTask.Id, taskData)
+        toast.success('Task updated successfully!')
+      } else {
+        result = await TaskService.createTask(taskData)
+        toast.success('Task created successfully!')
+      }
+
+      // Reload tasks to get fresh data
+      await loadTasks()
+      
+      // Reset form
+      resetForm()
+    } catch (err) {
+      console.error('Error saving task:', err)
+      toast.error(selectedTask ? 'Failed to update task' : 'Failed to create task')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetForm = () => {
     setNewTask({
       title: '',
       description: '',
@@ -99,34 +138,39 @@ const MainFeature = () => {
     setIsFormOpen(false)
     toast.success('Task created successfully!')
   }
-
-  const handleUpdateTaskStatus = (taskId, newStatus) => {
+      comments: []
     setTasks(prev => prev.map(task => 
+    setSelectedTask(null)
       task.id === taskId 
-        ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
         : task
     ))
-    
-    if (newStatus === 'completed') {
-      toast.success('Task completed! 🎉')
-    } else {
-      toast.info(`Task marked as ${newStatus.replace('-', ' ')}`)
-    }
-  }
-
-  const handleUpdateTask = (taskId, updates) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
+  const handleUpdateTaskStatus = async (taskId, newStatus) => {
+    try {
+      setLoading(true)
+      await TaskService.updateTask(taskId, { 
+        status: newStatus, 
+        updatedAt: new Date().toISOString() 
+      })
+      
+      // Reload tasks to get fresh data
+      await loadTasks()
+      
+      if (newStatus === 'completed') {
+        toast.success('Task completed! 🎉')
+      } else {
+        toast.info(`Task marked as ${newStatus.replace('-', ' ')}`)
+      }
+    } catch (err) {
+      console.error('Error updating task status:', err)
+      toast.error('Failed to update task status')
+    } finally {
+      setLoading(false)
         ? { ...task, ...updates, updatedAt: new Date().toISOString() }
         : task
     ))
     toast.success('Task updated successfully!')
-  }
-
-  const handleEditTask = (task) => {
-    setSelectedTask(task)
-    setNewTask({
-      title: task.title,
+    // This method is now handled by handleCreateTask when selectedTask is set
+    console.log('handleUpdateTask called with:', taskId, updates)
       description: task.description,
       dueDate: task.dueDate,
       priority: task.priority,
@@ -137,13 +181,22 @@ const MainFeature = () => {
       comments: task.comments || []
     })
     setIsFormOpen(true)
-    toast.info('Edit mode enabled')
+      project: task.project,
   }
 
-  const handleDeleteTask = (taskId) => {
+  const handleDeleteTask = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
-      setTasks(prev => prev.filter(task => task.id !== taskId))
-      toast.success('Task deleted successfully!')
+      try {
+        setLoading(true)
+        await TaskService.deleteTask(taskId)
+        await loadTasks()
+        toast.success('Task deleted successfully!')
+      } catch (err) {
+        console.error('Error deleting task:', err)
+        toast.error('Failed to delete task')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -171,8 +224,14 @@ const MainFeature = () => {
       return newIndex !== -1 ? { ...task, position: newIndex } : task
     })
 
-    setTasks(updatedTasks)
-    toast.success('Task order updated successfully!')
+    // Update positions in database
+    reorderedTasks.forEach(async (task, index) => {
+      try {
+        await TaskService.updateTask(task.Id, { position: index })
+      } catch (err) {
+        console.error('Error updating task position:', err)
+      }
+    })
   }
 
   const handleFileUpload = (acceptedFiles) => {
@@ -231,64 +290,72 @@ const MainFeature = () => {
 
   // Comment handlers
   const handleAddComment = (taskId, comment, parentId = null) => {
-    if (!comment.trim()) {
-      toast.error('Comment cannot be empty')
-      return
-    }
+    // Note: In a real implementation, this would use CommentService
+    // For now, we'll keep the local state management
+    try {
+      if (!comment.trim()) {
+        toast.error('Comment cannot be empty')
+        return
+      }
 
-    const newCommentObj = {
-      id: Date.now() + Math.random(),
-      text: comment.trim(),
-      author: 'Current User', // In real app, this would come from auth
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
-      createdAt: new Date().toISOString(),
-      parentId,
-      replies: []
-    }
+      const newCommentObj = {
+        id: Date.now() + Math.random(),
+        text: comment.trim(),
+        author: 'Current User', // In real app, this would come from auth
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
+        createdAt: new Date().toISOString(),
+        parentId,
+        replies: []
+      }
 
-    setTasks(prev => prev.map(task => {
-      if (task.id === taskId) {
-        const comments = task.comments || []
-        if (parentId) {
-          // Add as reply
-          const updateReplies = (commentsList) => {
-            return commentsList.map(comment => {
-              if (comment.id === parentId) {
-                return {
-                  ...comment,
-                  replies: [...(comment.replies || []), newCommentObj]
+      setTasks(prev => prev.map(task => {
+        if (task.Id === taskId) {
+          const comments = task.comments || []
+          if (parentId) {
+            // Add as reply - keep existing logic for nested comments
+            const updateReplies = (commentsList) => {
+              return commentsList.map(comment => {
+                if (comment.id === parentId) {
+                  return {
+                    ...comment,
+                    replies: [...(comment.replies || []), newCommentObj]
+                  }
                 }
-              }
-              if (comment.replies?.length > 0) {
-                return {
-                  ...comment,
-                  replies: updateReplies(comment.replies)
+                if (comment.replies?.length > 0) {
+                  return {
+                    ...comment,
+                    replies: updateReplies(comment.replies)
+                  }
                 }
-              }
-              return comment
-            })
-          }
-          return {
-            ...task,
-            comments: updateReplies(comments)
-          }
-        } else {
-          // Add as top-level comment
-          return {
-            ...task,
-            comments: [...comments, newCommentObj]
+                return comment
+              })
+            }
+            return {
+              ...task,
+              comments: updateReplies(comments)
+            }
+          } else {
+            // Add as top-level comment
+            return {
+              ...task,
+              comments: [...comments, newCommentObj]
+            }
           }
         }
-      }
-      return task
-    }))
+        return task
+      }))
 
-    toast.success('Comment added successfully!')
+      toast.success('Comment added successfully!')
+    } catch (err) {
+      console.error('Error adding comment:', err)
+      toast.error('Failed to add comment')
+    }
   }
 
   const handleDeleteComment = (taskId, commentId) => {
-    setTasks(prev => prev.map(task => {
-      if (task.id === taskId) {
+    try {
+      setTasks(prev => prev.map(task => {
+        if (task.Id === taskId) {
         const removeComment = (commentsList) => {
           return commentsList.filter(comment => {
             if (comment.id === commentId) return false
@@ -304,8 +371,12 @@ const MainFeature = () => {
         }
       }
       return task
-    }))
-    toast.success('Comment deleted')
+      }))
+      toast.success('Comment deleted')
+    } catch (err) {
+      console.error('Error deleting comment:', err)
+      toast.error('Failed to delete comment')
+    }
   }
 
   const formatFileSize = (bytes) => {
@@ -412,7 +483,7 @@ const MainFeature = () => {
   // Calendar event conversion
   const getCalendarEvents = () => {
     return getFilteredTasks().map(task => ({
-      id: task.id,
+      id: task.Id,
       title: task.title,
       start: new Date(task.dueDate),
       end: new Date(task.dueDate),
@@ -542,7 +613,7 @@ const MainFeature = () => {
                   </span>
                   <button
                     onClick={() => handleDeleteComment(task.id, comment.id)}
-                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded"
+                    onClick={() => handleDeleteComment(task.Id, comment.id)}
                   >
                     <ApperIcon name="Trash2" className="w-3 h-3" />
                   </button>
@@ -575,7 +646,7 @@ const MainFeature = () => {
                   <button
                     onClick={() => {
                       if (localReplyText.trim()) {
-                        handleAddComment(task.id, localReplyText, comment.id)
+                        handleAddComment(task.Id, localReplyText, comment.id)
                         setLocalReplyText('')
                         setLocalReplyingTo(null)
                       }
@@ -632,7 +703,7 @@ const MainFeature = () => {
                 <button
                   onClick={() => {
                     if (localComment.trim()) {
-                      handleAddComment(task.id, localComment)
+                      handleAddComment(task.Id, localComment)
                       setLocalComment('')
                     }
                   }}
@@ -924,7 +995,7 @@ const MainFeature = () => {
             </motion.div>
           ) : (
             filteredTasks.map((task, index) => (
-              <Draggable key={task.id} draggableId={task.id} index={index}>
+              <Draggable key={task.Id} draggableId={task.Id.toString()} index={index}>
                 {(provided, snapshot) => (
                   <motion.div
                     ref={provided.innerRef}
@@ -950,7 +1021,7 @@ const MainFeature = () => {
                           onClick={() => {
                             const nextStatus = task.status === 'pending' ? 'in-progress' :
                                              task.status === 'in-progress' ? 'completed' : 'pending'
-                            handleUpdateTaskStatus(task.id, nextStatus)
+                            handleUpdateTaskStatus(task.Id, nextStatus)
                           }}
                           className="mt-1 flex-shrink-0"
                         >
@@ -1034,7 +1105,7 @@ const MainFeature = () => {
                         </button>
                         <select
                           value={task.status}
-                          onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
+                          onChange={(e) => handleUpdateTaskStatus(task.Id, e.target.value)}
                           className="px-3 py-1 bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary"
                         >
                           {statuses.map(status => (
@@ -1045,7 +1116,7 @@ const MainFeature = () => {
                         </select>
                     
                         <button
-                          onClick={() => handleDeleteTask(task.id)}
+                          onClick={() => handleDeleteTask(task.Id)}
                           className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                         >
                           <ApperIcon name="Trash2" className="w-4 h-4" />
@@ -1097,8 +1168,7 @@ const MainFeature = () => {
                         title: '',
                         description: '',
                         dueDate: '',
-                        priority: 'medium',
-                        category: '',
+                        comments: []
                         project: '',
                         estimatedHours: 1,
                         attachments: [],
@@ -1183,7 +1253,7 @@ const MainFeature = () => {
                         <option value="">Select project...</option>
                         {projects.map(project => (
                           <option key={project} value={project}>
-                            {project}
+                            {project.Name || project}
                           </option>
                         ))}
                       </select>
@@ -1209,7 +1279,7 @@ const MainFeature = () => {
                   </div>
 
                   {selectedTask && (
-                    <CommentSection task={{ ...selectedTask, comments: tasks.find(t => t.id === selectedTask.id)?.comments || [] }} />
+                    <CommentSection task={{ ...selectedTask, comments: tasks.find(t => t.Id === selectedTask.Id)?.comments || [] }} />
                   )}
 
                   <div>
@@ -1241,7 +1311,7 @@ const MainFeature = () => {
                           title: '', description: '', dueDate: '', priority: 'medium', 
                           category: '', project: '', estimatedHours: 1,
                           attachments: [],
-                          comments: [],
+                          comments: []
                           position: tasks.length
                         })
                       }}

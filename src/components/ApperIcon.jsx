@@ -1,14 +1,112 @@
-import * as Icons from 'lucide-react';
+import React from 'react'
+import {
+  Calendar,
+  CheckCircle2,
+  CheckSquare,
+  Circle,
+  Clock,
+  Edit,
+  Flag,
+  GripVertical,
+  List,
+  MessageCircle,
+  Paperclip,
+  Plus,
+  Search,
+  Tag,
+  Trash2,
+  Upload,
+  X,
+  CalendarDays,
+  ClipboardList,
+  Target,
+  TrendingUp,
+  Users,
+  Folder,
+  Timeline,
+  Image,
+  FileText,
+  Table,
+  File,
+  Eye,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Grid3X3,
+  Moon,
+  Sun,
+  Github,
+  Twitter,
+  Mail
+} from 'lucide-react'
 
-const ApperIcon = ({ name, ...props }) => {
-    let IconComponent = Icons[name];
+const iconMap = {
+  Calendar,
+  CheckCircle2,
+  CheckSquare,
+  Circle,
+  Clock,
+  Edit,
+  Flag,
+  GripVertical,
+  List,
+  MessageCircle,
+  Paperclip,
+  Plus,
+  Search,
+  Tag,
+  Trash2,
+  Upload,
+  X,
+  CalendarDays,
+  ClipboardList,
+  Target,
+  TrendingUp,
+  Users,
+  Folder,
+  Timeline,
+  Image,
+  FileText,
+  Table,
+  File,
+  Eye,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Grid3X3,
+  Moon,
+  Sun,
+  Github,
+  Twitter,
+  Mail,
+  // Add aliases for consistency
+  'check-circle-2': CheckCircle2,
+  'check-square': CheckSquare,
+  'grip-vertical': GripVertical,
+  'message-circle': MessageCircle,
+  'trash-2': Trash2,
+  'calendar-days': CalendarDays,
+  'clipboard-list': ClipboardList,
+  'trending-up': TrendingUp,
+  'file-text': FileText,
+  'arrow-right': ArrowRight,
+  'arrow-up': ArrowUp,
+  'arrow-down': ArrowDown,
+  'grid-3x3': Grid3X3,
+  'eye': Eye,
+  'edit': Edit,
+  'search': Search,
+  'plus': Plus,
+  'list': List,
+  'users': Users,
+  'folder': Folder,
+  'x': X
+}
 
-    if (!IconComponent) {
-        console.warn(`Icon "${name}" does not exist in lucide-react`);
-        IconComponent = Icons['Smile'];
-    }
+const ApperIcon = ({ name, className = '', ...props }) => {
+  const IconComponent = iconMap[name] || iconMap[name?.toLowerCase()] || Circle
+  
+  return <IconComponent className={className} {...props} />
+}
 
-    return <IconComponent {...props} />;
-};
-
-export default ApperIcon;
+export default ApperIcon

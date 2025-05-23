@@ -1,115 +1,88 @@
-/* Custom React Big Calendar Styles */
+/* Custom overrides for react-big-calendar */
 .rbc-calendar {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
-
-.rbc-month-view {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.rbc-header {
-  background: #f8fafc;
-  color: #1e293b;
-  font-weight: 600;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.dark .rbc-header {
-  background: #334155;
-  color: #f1f5f9;
-  border-bottom-color: #475569;
-}
-
-.rbc-date-cell {
-  color: #475569;
-  padding: 8px;
-}
-
-.dark .rbc-date-cell {
-  color: #cbd5e1;
-}
-
-.rbc-today {
-  background-color: rgba(99, 102, 241, 0.1);
-}
-
-.dark .rbc-today {
-  background-color: rgba(99, 102, 241, 0.2);
-}
-
-.rbc-off-range-bg {
-  background: #f1f5f9;
-}
-
-.dark .rbc-off-range-bg {
-  background: #0f172a;
-}
-
-.rbc-day-bg {
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.dark .rbc-day-bg {
-  border-right-color: #475569;
-  border-bottom-color: #475569;
-}
-
-.rbc-event {
-  padding: 2px 6px;
-  font-size: 11px;
-  line-height: 1.3;
-  font-weight: 500;
-  border-radius: 6px;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
 }
 
 .rbc-toolbar {
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.rbc-toolbar button {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.rbc-toolbar button:hover {
-  background: #e2e8f0;
-}
-
-.rbc-toolbar button.rbc-active {
-  background: #6366f1;
-  color: white;
-  border-color: #6366f1;
-}
-
-.dark .rbc-toolbar button {
-  background: #334155;
-  color: #cbd5e1;
-  border-color: #475569;
-}
-
-.dark .rbc-toolbar button:hover {
-  background: #475569;
+  @apply flex flex-wrap items-center justify-between mb-6 gap-4;
 }
 
 .rbc-toolbar-label {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
+  @apply text-xl font-bold text-surface-900 dark:text-white;
 }
 
-.dark .rbc-toolbar-label {
-  color: #f1f5f9;
+.rbc-btn-group {
+  @apply flex gap-1;
+}
+
+.rbc-btn-group button {
+  @apply px-3 py-2 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 border border-surface-200 dark:border-surface-600 rounded-lg hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors text-sm;
+}
+
+.rbc-btn-group button.rbc-active {
+  @apply bg-primary text-white border-primary;
+}
+
+.rbc-header {
+  @apply bg-surface-50 dark:bg-surface-700 text-surface-900 dark:text-white font-semibold py-3 px-4 border-b border-surface-200 dark:border-surface-600 text-sm;
+}
+
+.rbc-month-view {
+  @apply bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg overflow-hidden;
+}
+
+.rbc-month-row {
+  @apply border-b border-surface-200 dark:border-surface-700;
+}
+
+.rbc-date-cell {
+  @apply text-surface-700 dark:text-surface-300 p-2;
+}
+
+.rbc-date-cell > a {
+  @apply text-surface-900 dark:text-white font-medium;
+}
+
+.rbc-off-range {
+  @apply text-surface-400 dark:text-surface-600;
+}
+
+.rbc-off-range-bg {
+  @apply bg-surface-50 dark:bg-surface-900;
+}
+
+.rbc-today {
+  @apply bg-primary/10 dark:bg-primary/20;
+}
+
+.rbc-day-bg {
+  @apply border-r border-surface-200 dark:border-surface-700;
+}
+
+.rbc-event {
+  @apply bg-primary text-white border-none rounded-md shadow-sm text-xs font-medium px-2 py-1;
+}
+
+.rbc-event.priority-high {
+  @apply bg-red-500;
+}
+
+.rbc-event.priority-medium {
+  @apply bg-yellow-500;
+}
+
+.rbc-event.priority-low {
+  @apply bg-green-500;
+}
+
+.rbc-event.status-completed {
+  @apply bg-surface-400 opacity-60;
+}
+
+.rbc-event.status-in-progress {
+  @apply bg-blue-500;
+}
+
+.rbc-event:focus {
+  @apply outline-none ring-2 ring-white ring-offset-2;
 }

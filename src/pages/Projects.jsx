@@ -3,61 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { toast } from 'react-toastify'
 import ApperIcon from '../components/ApperIcon'
+import ProjectService from '../services/ProjectService'
+import ProjectTeamMemberService from '../services/ProjectTeamMemberService'
+import ProjectTagService from '../services/ProjectTagService'
 
 const Projects = () => {
-  const [projects, setProjects] = useState([
-    {
-      id: '1',
-      name: 'Website Redesign',
-      description: 'Complete overhaul of company website with modern design and improved UX',
-      status: 'active',
-      priority: 'high',
-      progress: 65,
-      startDate: '2024-01-15',
-      endDate: '2024-03-30',
-      team: ['John Doe', 'Jane Smith', 'Mike Johnson'],
-      tasks: 24,
-      completedTasks: 16,
-      budget: 50000,
-      spent: 32500,
-      category: 'design',
-      tags: ['web', 'design', 'ux']
-    },
-    {
-      id: '2',
-      name: 'Mobile App Development',
-      description: 'Native iOS and Android app for customer engagement',
-      status: 'planning',
-      priority: 'medium',
-      progress: 15,
-      startDate: '2024-02-01',
-      endDate: '2024-06-15',
-      team: ['Sarah Wilson', 'David Chen', 'Lisa Brown'],
-      tasks: 42,
-      completedTasks: 6,
-      budget: 80000,
-      spent: 12000,
-      category: 'development',
-      tags: ['mobile', 'ios', 'android']
-    },
-    {
-      id: '3',
-      name: 'Marketing Campaign',
-      description: 'Q2 digital marketing campaign across multiple channels',
-      status: 'completed',
-      priority: 'low',
-      progress: 100,
-      startDate: '2024-01-01',
-      endDate: '2024-01-31',
-      team: ['Emily Davis', 'Tom Anderson'],
-      tasks: 18,
-      completedTasks: 18,
-      budget: 25000,
-      spent: 24500,
-      category: 'marketing',
-      tags: ['digital', 'campaign', 'social']
-    }
-  ])
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const [view, setView] = useState('grid')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -86,6 +39,27 @@ const Projects = () => {
     tags: []
   })
 
+  // Load projects on component mount
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true)
+      const projectsData = await ProjectService.fetchProjects()
+      setProjects(projectsData || [])
+      setError(null)
+    } catch (err) {
+      console.error('Error loading projects:', err)
+      setError('Failed to load projects')
+      toast.error('Failed to load projects')
+      setProjects([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const statusOptions = [
     { value: 'planning', label: 'Planning', color: 'bg-blue-500' },
     { value: 'active', label: 'Active', color: 'bg-green-500' },
@@ -110,8 +84,8 @@ const Projects = () => {
 
   // Filter and sort projects
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (project.Name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (project.description || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus
     const matchesPriority = filterPriority === 'all' || project.priority === filterPriority
     
@@ -132,92 +106,140 @@ const Projects = () => {
     }
   })
 
-  const handleCreateProject = () => {
-    if (!newProject.name.trim()) {
-      toast.error('Project name is required')
-      return
-    }
-    
-    if (!newProject.description.trim()) {
-      toast.error('Project description is required')
-      return
-    }
+  const handleCreateProject = async () => {
+    try {
+      if (!newProject.name.trim()) {
+        toast.error('Project name is required')
+        return
+      }
+      
+      if (!newProject.description.trim()) {
+        toast.error('Project description is required')
+        return
+      }
 
-    if (!newProject.startDate || !newProject.endDate) {
-      toast.error('Start date and end date are required')
-      return
-    }
+      if (!newProject.startDate || !newProject.endDate) {
+        toast.error('Start date and end date are required')
+        return
+      }
 
-    if (new Date(newProject.startDate) >= new Date(newProject.endDate)) {
-      toast.error('End date must be after start date')
-      return
-    }
+      if (new Date(newProject.startDate) >= new Date(newProject.endDate)) {
+        toast.error('End date must be after start date')
+        return
+      }
 
-    const project = {
-      ...newProject,
-      id: Date.now().toString(),
-      team: newProject.team.filter(member => member.trim() !== ''),
-      tags: newProject.tags.filter(tag => tag.trim() !== '')
-    }
+      setLoading(true)
+      
+      const projectData = {
+        Name: newProject.name,
+        description: newProject.description,
+        status: newProject.status,
+        priority: newProject.priority,
+        progress: newProject.progress,
+        startDate: newProject.startDate,
+        endDate: newProject.endDate,
+        budget: newProject.budget,
+        spent: newProject.spent,
+        category: newProject.category
+      }
 
-    setProjects(prev => [...prev, project])
-    setNewProject({
-      name: '',
-      description: '',
-      status: 'planning',
-      priority: 'medium',
-      progress: 0,
-      startDate: '',
-      endDate: '',
-      team: [],
-      tasks: 0,
-      completedTasks: 0,
-      budget: 0,
-      spent: 0,
-      category: 'development',
-      tags: []
-    })
-    setShowCreateModal(false)
-    toast.success('Project created successfully!')
+      await ProjectService.createProject(projectData)
+      
+      // Handle team members and tags separately if needed
+      // This would require additional API calls to ProjectTeamMemberService and ProjectTagService
+      
+      await loadProjects()
+      
+      setNewProject({
+        name: '',
+        description: '',
+        status: 'planning',
+        priority: 'medium',
+        progress: 0,
+        startDate: '',
+        endDate: '',
+        team: [],
+        tasks: 0,
+        completedTasks: 0,
+        budget: 0,
+        spent: 0,
+        category: 'development',
+        tags: []
+      })
+      setShowCreateModal(false)
+      toast.success('Project created successfully!')
+    } catch (err) {
+      console.error('Error creating project:', err)
+      toast.error('Failed to create project')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleEditProject = () => {
-    if (!selectedProject.name.trim()) {
-      toast.error('Project name is required')
-      return
-    }
-    
-    if (!selectedProject.description.trim()) {
-      toast.error('Project description is required')
-      return
-    }
+  const handleEditProject = async () => {
+    try {
+      if (!selectedProject.Name?.trim()) {
+        toast.error('Project name is required')
+        return
+      }
+      
+      if (!selectedProject.description?.trim()) {
+        toast.error('Project description is required')
+        return
+      }
 
-    if (!selectedProject.startDate || !selectedProject.endDate) {
-      toast.error('Start date and end date are required')
-      return
-    }
+      if (!selectedProject.startDate || !selectedProject.endDate) {
+        toast.error('Start date and end date are required')
+        return
+      }
 
-    if (new Date(selectedProject.startDate) >= new Date(selectedProject.endDate)) {
-      toast.error('End date must be after start date')
-      return
-    }
+      if (new Date(selectedProject.startDate) >= new Date(selectedProject.endDate)) {
+        toast.error('End date must be after start date')
+        return
+      }
 
-    setProjects(prev => prev.map(project => 
-      project.id === selectedProject.id ? {
-        ...selectedProject,
-        team: selectedProject.team.filter(member => member.trim() !== ''),
-        tags: selectedProject.tags.filter(tag => tag.trim() !== '')
-      } : project
-    ))
-    setSelectedProject(null)
-    setShowEditModal(false)
-    toast.success('Project updated successfully!')
+      setLoading(true)
+      
+      const projectData = {
+        Name: selectedProject.Name,
+        description: selectedProject.description,
+        status: selectedProject.status,
+        priority: selectedProject.priority,
+        progress: selectedProject.progress,
+        startDate: selectedProject.startDate,
+        endDate: selectedProject.endDate,
+        budget: selectedProject.budget,
+        spent: selectedProject.spent,
+        category: selectedProject.category
+      }
+
+      await ProjectService.updateProject(selectedProject.Id, projectData)
+      await loadProjects()
+      
+      setSelectedProject(null)
+      setShowEditModal(false)
+      toast.success('Project updated successfully!')
+    } catch (err) {
+      console.error('Error updating project:', err)
+      toast.error('Failed to update project')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDeleteProject = (projectId) => {
+  const handleDeleteProject = async (projectId) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
-      setProjects(prev => prev.filter(project => project.id !== projectId))
-      toast.success('Project deleted successfully!')
+      try {
+        setLoading(true)
+        await ProjectService.deleteProject(projectId)
+        await loadProjects()
+        toast.success('Project deleted successfully!')
+      } catch (err) {
+        console.error('Error deleting project:', err)
+        toast.error('Failed to delete project')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -228,14 +250,16 @@ const Projects = () => {
     const [reorderedItem] = items.splice(result.source.index, 1)
     items.splice(result.destination.index, 0, reorderedItem)
 
-    // Update the original projects array to maintain the new order
-    const newProjects = [...projects]
-    const sourceProject = projects.find(p => p.id === reorderedItem.id)
-    const sourceIndex = projects.indexOf(sourceProject)
-    newProjects.splice(sourceIndex, 1)
-    newProjects.splice(result.destination.index, 0, sourceProject)
+    // Update the original projects array locally first for immediate feedback
+    setProjects(prev => {
+      const newProjects = [...prev]
+      const sourceProject = prev.find(p => p.Id === reorderedItem.Id)
+      const sourceIndex = prev.indexOf(sourceProject)
+      newProjects.splice(sourceIndex, 1)
+      newProjects.splice(result.destination.index, 0, sourceProject)
+      return newProjects
+    })
     
-    setProjects(newProjects)
     toast.info('Project order updated')
   }
 
@@ -438,7 +462,7 @@ const Projects = () => {
                 className={view === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}
               >
                 {filteredProjects.map((project, index) => (
-                  <Draggable key={project.id} draggableId={project.id} index={index}>
+                  <Draggable key={project.Id} draggableId={project.Id.toString()} index={index}>
                     {(provided, snapshot) => (
                       <motion.div
                         ref={provided.innerRef}
@@ -453,7 +477,7 @@ const Projects = () => {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-1">
-                              {project.name}
+                              {project.Name}
                             </h3>
                             <p className="text-sm text-surface-600 dark:text-surface-400 line-clamp-2">
                               {project.description}
@@ -479,7 +503,7 @@ const Projects = () => {
                               <ApperIcon name="edit" className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDeleteProject(project.id)}
+                              onClick={() => handleDeleteProject(project.Id)}
                               className="p-2 text-surface-600 dark:text-surface-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             >
                               <ApperIcon name="trash-2" className="w-4 h-4" />
@@ -514,15 +538,15 @@ const Projects = () => {
                         {/* Project Stats */}
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
-                            <div className="text-xs text-surface-600 dark:text-surface-400 mb-1">Tasks</div>
+                            <div className="text-xs text-surface-600 dark:text-surface-400 mb-1">Progress</div>
                             <div className="text-sm font-medium text-surface-900 dark:text-white">
-                              {project.completedTasks}/{project.tasks}
+                              {project.progress}%
                             </div>
                           </div>
                           <div>
                             <div className="text-xs text-surface-600 dark:text-surface-400 mb-1">Budget</div>
                             <div className="text-sm font-medium text-surface-900 dark:text-white">
-                              {formatCurrency(project.spent)}/{formatCurrency(project.budget)}
+                              {formatCurrency(project.spent || 0)}/{formatCurrency(project.budget || 0)}
                             </div>
                           </div>
                         </div>
@@ -538,7 +562,7 @@ const Projects = () => {
                         <div className="flex items-center gap-2">
                           <ApperIcon name="users" className="w-4 h-4 text-surface-600 dark:text-surface-400" />
                           <span className="text-sm text-surface-600 dark:text-surface-400">
-                            {project.team.length} team member{project.team.length !== 1 ? 's' : ''}
+                            {(project.team?.length || 0)} team member{(project.team?.length || 0) !== 1 ? 's' : ''}
                           </span>
                         </div>
                       </motion.div>
