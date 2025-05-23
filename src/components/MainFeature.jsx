@@ -143,8 +143,6 @@ const MainFeature = () => {
       toast.success('Task deleted successfully!')
     }
   }
-  // File attachment handlers
-  }
 
   // File attachment handlers
   const handleFileUpload = (acceptedFiles) => {
@@ -785,8 +783,6 @@ const MainFeature = () => {
     </div>
   )
 
-  const filteredTasks = getFilteredTasks()
-
   return (
     <div className="p-6 md:p-8 lg:p-12">
       {/* Header */}
@@ -869,6 +865,8 @@ const MainFeature = () => {
       {/* Task List - only show in list view */}
       {currentView === 'list' && (
         <div className="space-y-4">
+        {(() => {
+          const filteredTasks = getFilteredTasks()
         <AnimatePresence mode="popLayout">
           {filteredTasks.length === 0 ? (
             <motion.div
@@ -1014,8 +1012,10 @@ const MainFeature = () => {
             ))
           )}
         </AnimatePresence>
+        })()}
         </div>
       )}
+      
       {/* Create/Edit Task Modal */}
       <AnimatePresence>
         {isFormOpen && (
@@ -1048,7 +1048,8 @@ const MainFeature = () => {
                         category: '',
                         project: '',
                         description: '',
-                        attachments: [],
+                        estimatedHours: 1,
+                        description: '',
                         comments: []
                       })
                     }}
