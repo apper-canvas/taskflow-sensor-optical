@@ -741,7 +741,6 @@ const Projects = () => {
                         </div>
                       </div>
                     </div>
-        {/* Summary stats at the bottom */}
                     {/* Team Members */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
@@ -774,7 +773,7 @@ const Projects = () => {
                         </div>
                       ))}
                     </div>
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-4">
                       <button
@@ -797,6 +796,9 @@ const Projects = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Summary Stats */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-surface-800 rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-surface-900 dark:text-white">{projects.length}</div>
             <div className="text-sm text-surface-600 dark:text-surface-400">Total Projects</div>
