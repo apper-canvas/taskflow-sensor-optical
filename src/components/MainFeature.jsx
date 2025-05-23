@@ -1021,8 +1021,6 @@ const MainFeature = () => {
                           )}
                         </div>
                         </div>
-                        </div>
-                      </div>
                   
                       <div className="flex items-center space-x-2 sm:ml-4">
                         <button
@@ -1098,7 +1096,6 @@ const MainFeature = () => {
                         priority: 'medium',
                         category: '',
                         project: '',
-                        description: '',
                         estimatedHours: 1,
                         comments: []
                         attachments: [],
