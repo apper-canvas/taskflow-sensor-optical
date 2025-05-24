@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { format, isToday, isTomorrow, isThisWeek, parseISO, addDays, startOfMonth, endOfMonth } from 'date-fns'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
+import 'react-big-calendar/lib/css/react-big-calendar.css'
 import moment from 'moment'
 import ApperIcon from './ApperIcon'
 import { useDropzone } from 'react-dropzone'
@@ -751,7 +752,7 @@ const MainFeature = () => {
             <div className="ml-4">
               {projectTasks.map((task, index) => (
                 <div 
-                  key={task.id} 
+                  key={task.Id || index} 
                   className={`timeline-item status-${task.status} priority-${task.priority}`}
                 >
                   <div className="bg-surface-50 dark:bg-surface-700 rounded-xl p-4 hover:shadow-card transition-all duration-200 cursor-pointer"
@@ -836,7 +837,7 @@ const MainFeature = () => {
         showMultiDayTimes
         components={{
           event: ({ event }) => (
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center justify-between w-full text-xs">
               <span className="font-medium truncate">{event.title}</span>
               <ApperIcon 
                 name={getStatusIcon(event.resource.status)}
@@ -929,7 +930,7 @@ const MainFeature = () => {
             { id: 'in-progress', label: 'In Progress', icon: 'Clock' },
             { id: 'completed', label: 'Completed', icon: 'CheckCircle2' },
             { id: 'today', label: 'Due Today', icon: 'Calendar' },
-            { id: 'upcoming', label: 'Upcoming', icon: 'CalendarDays' }
+            { id: 'upcoming', label: 'Upcoming', icon: 'Calendar' }
           ].map((filterOption) => (
             <motion.button
               key={filterOption.id}
@@ -1245,8 +1246,8 @@ const MainFeature = () => {
                       >
                         <option value="">Select project...</option>
                         {projects.map((project, index) => (
-                          <option key={project?.Id || project?.name || index} value={project?.Id || project?.name || project}>
-                            {project?.Name || project?.name || project}
+                          <option key={project?.Id || project?.Name || index} value={project?.Id || project?.Name || project}>
+                            {project?.Name || project?.name || String(project)}
                           </option>
                         ))}
                       </select>
