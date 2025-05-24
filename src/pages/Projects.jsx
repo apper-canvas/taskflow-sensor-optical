@@ -821,6 +821,316 @@ const Projects = () => {
           )}
         </AnimatePresence>
 
+        {/* Edit Project Modal */}
+        <AnimatePresence>
+          {showEditModal && selectedProject && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowEditModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-surface-800 rounded-2xl shadow-2xl border border-surface-200 dark:border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-surface-900 dark:text-white">Edit Project</h2>
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="p-2 text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                    >
+                      <ApperIcon name="x" className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={(e) => { e.preventDefault(); handleEditProject(); }} className="space-y-6">
+                    {/* Basic Information */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white">Basic Information</h3>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                          Project Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedProject.Name || ''}
+                          onChange={(e) => setSelectedProject(prev => ({ ...prev, Name: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          placeholder="Enter project name"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                          Description *
+                        </label>
+                        <textarea
+                          value={selectedProject.description || ''}
+                          onChange={(e) => setSelectedProject(prev => ({ ...prev, description: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          placeholder="Enter project description"
+                          rows="3"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Status
+                          </label>
+                          <select
+                            value={selectedProject.status || 'planning'}
+                            onChange={(e) => setSelectedProject(prev => ({ ...prev, status: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          >
+                            {statusOptions.map(status => (
+                              <option key={status.value} value={status.value}>{status.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Priority
+                          </label>
+                          <select
+                            value={selectedProject.priority || 'medium'}
+                            onChange={(e) => setSelectedProject(prev => ({ ...prev, priority: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          >
+                            {priorityOptions.map(priority => (
+                              <option key={priority.value} value={priority.value}>{priority.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Category
+                          </label>
+                          <select
+                            value={selectedProject.category || 'development'}
+                            onChange={(e) => setSelectedProject(prev => ({ ...prev, category: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                          >
+                            {categoryOptions.map(category => (
+                              <option key={category.value} value={category.value}>{category.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dates and Budget */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white">Timeline & Budget</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Start Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={selectedProject.startDate || ''}
+                            onChange={(e) => setSelectedProject(prev => ({ ...prev, startDate: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            End Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={selectedProject.endDate || ''}
+                            onChange={(e) => setSelectedProject(prev => ({ ...prev, endDate: e.target.value }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Budget ($)
+                          </label>
+                          <input
+                            type="number"
+                            value={selectedProject.budget || 0}
+                            onChange={(e) => setSelectedProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+        
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                            Progress (%)
+                          </label>
+                          <input
+                            type="number"
+                            value={selectedProject.progress || 0}
+                            onChange={(e) => setSelectedProject(prev => ({ ...prev, progress: Number(e.target.value) }))}
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-surface-900 dark:text-white"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowEditModal(false)}
+                        className="flex-1 px-6 py-2 bg-surface-200 dark:bg-surface-700 text-surface-900 dark:text-white rounded-xl hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors"
+                      >
+                        Update Project
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* View Project Modal */}
+        <AnimatePresence>
+          {showViewModal && selectedProject && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowViewModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-surface-800 rounded-2xl shadow-2xl border border-surface-200 dark:border-surface-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-surface-900 dark:text-white">Project Details</h2>
+                    <button
+                      onClick={() => setShowViewModal(false)}
+                      className="p-2 text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                    >
+                      <ApperIcon name="x" className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Basic Information */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-4">Basic Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Project Name</label>
+                          <div className="text-surface-900 dark:text-white">{selectedProject.Name}</div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Category</label>
+                          <div className="text-surface-900 dark:text-white capitalize">{selectedProject.category}</div>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Description</label>
+                          <div className="text-surface-900 dark:text-white">{selectedProject.description}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status and Priority */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-4">Status & Priority</h3>
+                      <div className="flex items-center gap-4">
+                        <span className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getStatusColor(selectedProject.status)}`}>
+                          {statusOptions.find(s => s.value === selectedProject.status)?.label}
+                        </span>
+                        <span className={`text-sm font-medium ${getPriorityColor(selectedProject.priority)}`}>
+                          {priorityOptions.find(p => p.value === selectedProject.priority)?.label} Priority
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Timeline and Budget */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-4">Timeline & Budget</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Start Date</label>
+                          <div className="text-surface-900 dark:text-white">{formatDate(selectedProject.startDate)}</div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">End Date</label>
+                          <div className="text-surface-900 dark:text-white">{formatDate(selectedProject.endDate)}</div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Budget</label>
+                          <div className="text-surface-900 dark:text-white">{formatCurrency(selectedProject.budget || 0)}</div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Spent</label>
+                          <div className="text-surface-900 dark:text-white">{formatCurrency(selectedProject.spent || 0)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-4">Progress</h3>
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-surface-900 dark:text-white">Overall Progress</span>
+                          <span className="text-sm text-surface-600 dark:text-surface-400">{selectedProject.progress}%</span>
+                        </div>
+                        <div className="w-full bg-surface-200 dark:bg-surface-700 rounded-full h-3">
+                          <div
+                            className="bg-primary rounded-full h-3 transition-all duration-300"
+                            style={{ width: `${selectedProject.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-6">
+                    <button
+                      onClick={() => setShowViewModal(false)}
+                      className="px-6 py-2 bg-surface-200 dark:bg-surface-700 text-surface-900 dark:text-white rounded-xl hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Summary Stats */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-surface-800 rounded-xl p-4 text-center">
