@@ -128,6 +128,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/calendar" element={<Home />} />
+          <Route path="/analytics" element={<Analytics />} />
+
           <Route path="/timeline" element={<Home />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

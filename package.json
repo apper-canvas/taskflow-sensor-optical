@@ -23,6 +23,8 @@
   "@hello-pangea/dnd": "^18.0.1",
     "@reduxjs/toolkit": "^2.4.0",
   "react-redux": "^9.1.2",
+    "react-apexcharts": "^1.7.0",
+
     "apexcharts": "^4.5.0"
   },
   "devDependencies": {

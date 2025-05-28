@@ -41,9 +41,10 @@ const Home = () => {
               <Link to="/projects" className="text-surface-700 dark:text-surface-300 hover:text-primary transition-colors font-medium">
                 Projects
               </Link>
-              <a href="#analytics" className="text-surface-700 dark:text-surface-300 hover:text-primary transition-colors font-medium">
+              <Link to="/analytics" className="text-surface-700 dark:text-surface-300 hover:text-primary transition-colors font-medium">
                 Analytics
-              </a>
+              </Link>
+
             </nav>
 
             {/* Dark Mode Toggle */}
