@@ -13,6 +13,8 @@ import ErrorPage from './pages/ErrorPage'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 import Projects from './pages/Projects'
+import Analytics from './pages/Analytics'
+
 
 // Create auth context
 export const AuthContext = createContext(null)
